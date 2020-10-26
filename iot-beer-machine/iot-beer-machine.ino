@@ -17,6 +17,8 @@ VendSlot slot1;
 VendSlot slot2;
 
 
+VendSlot* slots[2];
+ 
 
 
 
@@ -30,18 +32,39 @@ void setup(void)
   lcd.init();
   lcd.backlight();
 
+
   Serial.println("About to set up Slots");
   slot1.setup(1, 12, &a2d, 0, &lcd, 0, 0);
   slot2.setup(2, 11, &a2d, 1, &lcd, 1, 0);
 
-  slot1.vend();
-  slot2.vend();
+  slots[0] = &slot1;
+  slots[1] = &slot2;
+
+//  int i = 0;
+//  for (i = 0; i < 2; i++){
+//    (*slots[i]).vend();
+//  }
+
 
 }
 
 void loop(void)
 {
-    print_adc(a2d, lcd);
+
+    Serial.print("Analog A0: ");
+    Serial.println(analogRead(A0));
+    Serial.print("Analog A1: ");
+    Serial.println(analogRead(A1));
+    
+    if (analogRead(A0) > 100){
+      (*slots[0]).vend();
+    }
+
+    if (analogRead(A1) > 100){
+      (*slots[1]).vend();
+    }
+  
+  //  print_adc(a2d, lcd);
     flash();
     delay(250);
 }

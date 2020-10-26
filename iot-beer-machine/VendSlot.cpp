@@ -26,6 +26,14 @@ void VendSlot::setup(int slot_number, int relay_pin, Adafruit_ADS1115 *adc, int 
     pinMode(_relay_pin, OUTPUT);
     digitalWrite(_relay_pin, HIGH);
     _clear_dispaly();
+    reset();
+    _set_status(VendSlot::STATUS_READY);
+}
+
+void VendSlot::reset(){
+  if (_is_vending_done() == false){
+    vend();
+  }
 }
 
 

@@ -14,6 +14,7 @@ public:
 
   int slot_status();
   int vend();
+  void reset();
 
   static const int STATUS_NOT_SET_UP   = -1;
   static const int STATUS_READY   = 0;
