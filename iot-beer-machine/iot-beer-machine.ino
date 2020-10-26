@@ -1,93 +1,68 @@
-#define USE_WINC1500
+#include <Wire.h>
+#include <Adafruit_ADS1015.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <LiquidCrystal_I2C.h>
+#include "VendSlot.h"
 
-#include "secrets.h"
-#include "util.h"
-#include "AdafruitIO_WiFi.h"
+//#include <ArduinoJson.h>  //https://arduinojson.org/v6/assistant/
 
-AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
+Adafruit_ADS1115 a2d(0x48);      
+LiquidCrystal_I2C lcd(0x27,20,4); 
+ 
+#define BTN_1 A0
+#define BTN_2 A1 
 
-// Set up feeds.
-AdafruitIO_Feed *command   = io.feed("iot-beer-command");          // Used to recieve commands
-AdafruitIO_Feed *msg       = io.feed("iot-beer-msg");              // Used to send general string messages
-AdafruitIO_Feed *m_status  = io.feed("iot-beer-status");           // Overall Machine Status (Ready, Vending, Open, Error)
-AdafruitIO_Feed *vend_rate = io.feed("iot-beer-vend_rate");        // Reported per can vending 
-AdafruitIO_Feed *in_temp   = io.feed("iot-beer-inner-temp");       // The temp inside the machine (next to the cans)
-AdafruitIO_Feed *out_temp  = io.feed("iot-beer-outside-temp");     // The temp outside the machine 
-AdafruitIO_Feed *out_quh   = io.feed("iot-beer-outside-quh");      // The Barometric Pressure outside the machine 
-AdafruitIO_Feed *out_rh    = io.feed("iot-beer-outside-rh");       // Relative Humidity outside the machine
-AdafruitIO_Feed *ac_amps   = io.feed("iot-beer-outside-ac-amps");  // Amps used by the AC Compressor
+VendSlot slot1;
+VendSlot slot2;
 
 
-void setup() {
-  Serial.begin(115200);
-  while(! Serial);
 
-  Serial.print("Connecting to Adafruit IO");
 
-  // connect to io.adafruit.com
-  io.connect();
-  while(io.status() < AIO_CONNECTED) {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println();
-  Serial.println(io.statusText());
 
-  command->onMessage(iotCommand);
-  //command->get();
+ 
+void setup(void)
+{
+  Serial.begin(9600);
+  delay(2000);
   
-  m_status->save("Ready");
-  m("Beer Machine Ready...Lets have a beer!");
+  a2d.begin();  
+  lcd.init();
+  lcd.backlight();
+
+  Serial.println("About to set up Slots");
+  slot1.setup(1, 12, &a2d, 0, &lcd, 0, 0);
+  slot2.setup(2, 11, &a2d, 1, &lcd, 1, 0);
+
+  slot1.vend();
+  slot2.vend();
+
 }
 
-void loop() {
-  io.run();
+void loop(void)
+{
+    print_adc(a2d, lcd);
+    flash();
+    delay(250);
+}
+
+
+void print_adc(Adafruit_ADS1115 b, LiquidCrystal_I2C lcd){
+  for (int i = 0; i <= 1; i++) {
+    int v = b.readADC_SingleEnded(i);
+    lcd.setCursor(0,i+2);
+    lcd.print(i);
+    lcd.print(": ");
+    lcd.print(v);
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.println(v);
+  }
+
+}
+
+void flash(){
   digitalWrite(13, HIGH);
-  delay(500);
+  delay(250);
   digitalWrite(13, LOW);
-  delay(500);
-}
-
-
-void iotCommand(AdafruitIO_Data *data){
-  Serial.print("received <- ");
-  Serial.println(data->value());
-
-  int v = data->toInt();
-  if (v > 0){
-    switch(v) {
-      case 1:
-      case 2:
-      case 3:
-      case 4:
-      case 5:
-      case 6:
-      case 7:
-      case 8:
-         vend_slot(v);
-         command->save("R:" + String(v) + ":Success");
-         break;
-      default :
-         Serial.print("Unkinown command id: ");
-         Serial.println(v);
-
-         command->save("R:" + String(v) + ":Not Found"); 
-         msg->save("I did not understand the command you sent.");    
-    }
-  }
-}
-
-
-
-void vend_slot(int slot){
-  m_status->save("Vending");
-  m("Vending slot:" + String(slot));
-  delay(10000);
-  m("Beer from " + String(slot) + " is ready for you to pick up.  Cheers!");
-  m_status->save("Ready");
-}
-  
-void m(String s){
-  Serial.println(s);
-  msg->save(s);
 }
