@@ -44,8 +44,8 @@ void setup(void)
   lcd.backlight();
 
 
-  slot1.setup(1, 12, &a2d, 0, &lcd, 0, 0);
-  slot2.setup(2, 11, &a2d, 1, &lcd, 1, 0);
+  slot1.setup(1, 12, &a2d, 0, &a2d, 2, &lcd, 0, 0);
+  slot2.setup(2, 11, &a2d, 1, &a2d, 3, &lcd, 1, 0);
 
   slots[0] = &slot1;
   slots[1] = &slot2;
