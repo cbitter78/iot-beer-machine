@@ -115,7 +115,7 @@ int VendSlot::vend(){
  }
  
  bool VendSlot::_is_vending_done(){
-   int v = _read_adc(_vend_adc, _vend_adc_pin);ß
+   int v = _read_adc(_vend_adc, _vend_adc_pin);
    if (v > 2000){
      return false;  // This means there is the circut is closed (has power) and vending is still taking place.
    }
