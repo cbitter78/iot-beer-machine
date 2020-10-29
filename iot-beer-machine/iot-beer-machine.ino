@@ -49,9 +49,17 @@ void setup(void)
   lcd.init();
   lcd.backlight();
 
-
+  // Because our slots array only holds referances we need to keep 
+  // a copy of the slot by using a global variable.   If not the slot
+  // object will be destroyed and the pointer will point to the wrong
+  // memory. 
   slot1.setup(1, 12, &a2d, 0, &a2d, 2, &lcd, 0);
   slot2.setup(2, 11, &a2d, 1, &a2d, 3, &lcd, 1);
+
+//  slot3.setup(3, 10, &a2d_2, 0, &a2d, 2, &lcd_2, 0);
+//  slot4.setup(4,  9, &a2d_2, 1, &a2d, 3, &lcd_2, 1);
+//  slot5.setup(5,  6, &a2d_2, 0, &a2d, 2, &lcd_3, 0);
+//  slot6.setup(6,  5, &a2d_2, 1, &a2d, 3, &lcd_3, 1);
 
   slots[0] = &slot1;
   slots[1] = &slot2;
@@ -103,7 +111,7 @@ void vend_callback(char *data, uint16_t len) {
 void loop(void)
 {
     MQTT_connect();
-    mqtt.processPackets(10000);
+    mqtt.processPackets(5000);
     mqtt.ping();
       
     if (analogRead(A0) > 100){

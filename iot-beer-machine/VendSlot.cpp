@@ -116,7 +116,7 @@ int VendSlot::vend(){
  }
  
  bool VendSlot::_is_vending_done(){
-   uint16_t v = _read_adc(_vend_adc, _vend_adc_pin);ß
+   uint16_t v = _read_adc(_vend_adc, _vend_adc_pin);
    if (v > 2000){
      return false;  // This means there is the circut is closed (has power) and vending is still taking place.
    }
@@ -134,16 +134,16 @@ int VendSlot::vend(){
 
  void VendSlot::_lcd_display(char* msg){
     LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(_lcd_row, 0);
+    l.setCursor(0, _lcd_row);
     l.print(String(_slot_number) + ": ");
     l.print(msg);
  }
  
  void VendSlot::_clear_dispaly(){
     LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(_lcd_row, 0);
+    l.setCursor(0, _lcd_row);
     l.print("Setting up Slot " + String(_slot_number));
     delay(1000);
-    l.setCursor(_lcd_row, 0);
+    l.setCursor(0, _lcd_row);
     l.print("                    "); 
  }
