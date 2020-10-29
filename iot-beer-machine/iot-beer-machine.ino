@@ -27,8 +27,8 @@ Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe (&mqtt, AIO_USE
 int status = WL_IDLE_STATUS;
 
 VendSlot* slots[2];
-VendSlot slot1;
-VendSlot slot2;
+VendSlot  slot1;
+VendSlot  slot2;
 
 void setup(void)
 {
@@ -44,16 +44,11 @@ void setup(void)
   lcd.backlight();
 
 
-  slot1.setup(1, 12, &a2d, 0, &a2d, 2, &lcd, 0, 0);
-  slot2.setup(2, 11, &a2d, 1, &a2d, 3, &lcd, 1, 0);
+  slot1.setup(1, 12, &a2d, 0, &a2d, 2, &lcd, 0);
+  slot2.setup(2, 11, &a2d, 1, &a2d, 3, &lcd, 1);
 
   slots[0] = &slot1;
   slots[1] = &slot2;
-
-//  int i = 0;
-//  for (i = 0; i < 2; i++){
-//    (*slots[i]).vend();
-//  }
 
 }
 

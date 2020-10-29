@@ -13,7 +13,7 @@ public:
   void setup(int slot_number, int relay_pin, 
              Adafruit_ADS1115 *vend_adc, int vend_adc_pin, 
              Adafruit_ADS1115 *slot_low_adc, int slot_low_adc_pin, 
-             LiquidCrystal_I2C *lcd, int lcd_column, int lcd_row);
+             LiquidCrystal_I2C *lcd int lcd_row);
 
   int slot_status();
   int vend_status();
@@ -47,7 +47,6 @@ protected:
   int _relay_pin;
   int _vend_adc_pin;
   int _slot_low_adc_pin;
-  int _lcd_column;
   int _lcd_row;
   int _vend_status;
 
