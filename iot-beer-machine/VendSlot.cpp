@@ -29,11 +29,10 @@ void VendSlot::setup(int slot_number, int relay_pin,
     _lcd_column   = lcd_column;
     _lcd_row      = lcd_row;
 
+    _clear_dispaly();
     pinMode(_relay_pin, OUTPUT);
     digitalWrite(_relay_pin, HIGH);
-    _clear_dispaly();
     reset();
-    _set_vend_status(VendSlot::VEND_STATUS_READY);
     slot_status();
 }
 
@@ -41,6 +40,7 @@ void VendSlot::reset(){
   if (_is_vending_done() == false){
     vend();
   }
+  _set_vend_status(VendSlot::VEND_STATUS_READY);
 }
 
 
@@ -71,6 +71,7 @@ int VendSlot::vend(){
          if (_is_vending_done()){
            _moter_off();
            _set_vend_status(VendSlot::VEND_STATUS_READY);
+           slot_status();
            return VendSlot::VEND_STATUS_READY;
          }
        }
@@ -78,6 +79,7 @@ int VendSlot::vend(){
        delay(200);
      }
      _moter_off();
+     slot_status();
      _set_vend_status(VendSlot::VEND_STATUS_STUCK);
      return VendSlot::VEND_STATUS_STUCK;
 }
@@ -114,9 +116,7 @@ int VendSlot::vend(){
  }
  
  bool VendSlot::_is_vending_done(){
-   int v = _read_adc(_vend_adc, _vend_adc_pin);
-   Serial.print("ADC Value from slot " + String(_slot_number) + " reads: ");
-   Serial.println(v);
+   uint16_t v = _read_adc(_vend_adc, _vend_adc_pin);
    if (v > 2000){
      return false;  // This means there is the circut is closed (has power) and vending is still taking place.
    }
@@ -126,8 +126,8 @@ int VendSlot::vend(){
  }
 
 
- int VendSlot::_read_adc(Adafruit_ADS1015 *adc, int pin){
-    int v = (*adc).readADC_SingleEnded(pin);
+ uint16_t VendSlot::_read_adc(Adafruit_ADS1015 *adc, int pin){
+    uint16_t v = (*adc).readADC_SingleEnded(pin);
     if (v == 65535){ v = 0; }
     Serial.print("ADC Value from slot " + String(_slot_number) + " / " + String(pin) +  " reads: ");
     Serial.println(v);

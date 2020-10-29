@@ -26,14 +26,14 @@ public:
   static const int VEND_STATUS_STUCK       = 50;
   static const int VEND_STATUS_ERROR       = 255;
 
-
   static const int SLOT_STATUS_OK          = 0;
   static const int SLOT_STATUS_RUNNING_OUT = 1;
 
 protected:
   
-  bool _is_vending_done();
-  int  _read_adc(Adafruit_ADS1015 *adc, int pin);
+  bool      _is_vending_done();
+  uint16_t  _read_adc(Adafruit_ADS1015 *adc, int pin);
+  
   void _moter_on();
   void _moter_off();
   void _set_vend_status(int s);
@@ -43,6 +43,7 @@ protected:
   Adafruit_ADS1015  *_slot_low_adc;
   Adafruit_ADS1015  *_vend_adc;
   LiquidCrystal_I2C *_lcd;
+  
   int _slot_number;
   int _relay_pin;
   int _vend_adc_pin;
