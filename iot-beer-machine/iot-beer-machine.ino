@@ -72,12 +72,14 @@ void setup(void)
 
 
 void vend_callback(char *data, uint16_t len) {
-  Serial.print("received <- ");
+  Serial.print("vend_callback:received <- ");
   Serial.println(data);
-
+ 
+  // Parse the JSON document 
+  // Example:
+  //          {"name":"vend","id":"1","slot":2,"args":["Charles"]}
+  //
   DynamicJsonDocument doc(200);
-
-  // Parse the JSON document from the HTTP response
   DeserializationError err = deserializeJson(doc, data);
   if (err) {
     Serial.print(F("Parsing command failed: "));
@@ -100,7 +102,6 @@ void vend_callback(char *data, uint16_t len) {
   else{
     Serial.println("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
   }
-
 }
 
 
