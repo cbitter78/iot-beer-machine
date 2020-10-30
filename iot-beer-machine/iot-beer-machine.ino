@@ -17,6 +17,11 @@
 #define WINC_RST  4
 #define WINC_EN   2  
 
+#define SLOT_COUNT 2
+VendSlot* slots[SLOT_COUNT];
+VendSlot  slot1;
+VendSlot  slot2;
+
 LiquidCrystal_I2C lcd(0x27,20,4); 
 Adafruit_ADS1115  a2d(0x48);      
 WiFiClient        client;
@@ -24,13 +29,11 @@ WiFiClient        client;
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
 Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/iot-beer-command-rx");
 Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/iot-beer-command");
-Adafruit_MQTT_Subscribe timefeed       = Adafruit_MQTT_Subscribe(&mqtt, "time/seconds");
+//Adafruit_MQTT_Subscribe timefeed       = Adafruit_MQTT_Subscribe(&mqtt, "time/seconds");
 
 int status = WL_IDLE_STATUS;
 
-VendSlot* slots[2];
-VendSlot  slot1;
-VendSlot  slot2;
+
 
 void setup(void)
 {
@@ -42,12 +45,14 @@ void setup(void)
   aio_command.setCallback(vend_callback);
   mqtt.subscribe(&aio_command);
   
-  timefeed.setCallback(timecallback);
-  mqtt.subscribe(&timefeed);
+  //timefeed.setCallback(timecallback);
+  //mqtt.subscribe(&timefeed);
   
   a2d.begin();  
   lcd.init();
   lcd.backlight();
+
+  Serial.println(SUBSCRIPTIONDATALEN);
 
   // Because our slots array only holds referances we need to keep 
   // a copy of the slot by using a global variable.   If not the slot
@@ -63,7 +68,6 @@ void setup(void)
 
   slots[0] = &slot1;
   slots[1] = &slot2;
-
 }
 
 
@@ -71,7 +75,7 @@ void vend_callback(char *data, uint16_t len) {
   Serial.print("received <- ");
   Serial.println(data);
 
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(200);
 
   // Parse the JSON document from the HTTP response
   DeserializationError err = deserializeJson(doc, data);
@@ -81,30 +85,22 @@ void vend_callback(char *data, uint16_t len) {
     return;
   }
 
-  const char* device = doc["device"]; // "BEER1"
-  JsonObject cmd = doc["cmd"];
-  const char* cmd_name = cmd["name"]; // "vend"
-  const char* cmd_id = cmd["id"]; // "55e254fd-a4d6-41d6-9817-f2e280132d56"
-  int cmd_slot = cmd["slot"]; // 1
-  const char* cmd_msg = cmd["msg"];
-
-  Serial.println("Device:   " + String(device));
+  const char* cmd_name = doc["name"]; 
+  const char* cmd_id = doc["id"]; 
+  int         cmd_slot = doc["slot"]; 
+  const char* recipient = doc["args"][0]; 
+   
   Serial.println("cmd:name  " + String(cmd_name));
   Serial.println("cmd:id:   " + String(cmd_id));
   Serial.println("cmd.slot: " + String(cmd_slot));
-  Serial.println("cmd.msg:  " + String(cmd_msg));
+  Serial.println("cmd.msg:  " + String(recipient));
+  if (cmd_slot <= SLOT_COUNT && cmd_slot > 0){
+    (*slots[cmd_slot - 1]).vend();
+  }
+  else{
+    Serial.println("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
+  }
 
-//  if (doc["device"] != DEVICE_ID){
-//    Serial.println("Command for differnt device");
-//    return;
-//  }
-//
-//  if(doc["cmd"]["name"] == "vend"){
-//    vend_slot(doc["cmd"]["args"][0], doc["cmd"]["id"]); 
-//    return;
-//  }
-//
-//  report_error("Unknown Command", 404, doc["cmd"]["id"]);
 }
 
 
