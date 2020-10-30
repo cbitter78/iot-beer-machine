@@ -12,6 +12,8 @@
 #include "util.h"
 #include "secrets.h"
 
+#define MQTT_DEBUG
+
 #define WINC_CS   8
 #define WINC_IRQ  7
 #define WINC_RST  4
@@ -27,12 +29,23 @@ Adafruit_ADS1115  a2d(0x48);
 WiFiClient        client;
 
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/iot-beer-command-rx");
-Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/iot-beer-command");
+Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/iot-beer-command-rx",  /* QOS: Once */ 1);
+Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/iot-beer-command",     /* QOS: Once */ 1);
 //Adafruit_MQTT_Subscribe timefeed       = Adafruit_MQTT_Subscribe(&mqtt, "time/seconds");
+Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/errors");
+Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 
 int status = WL_IDLE_STATUS;
 
+void on_aio_error(char *data, uint16_t len) {
+  Serial.print("AIO_ERROR: on_aio_error:received <- ");
+  Serial.println(data);
+}
+
+void on_throttle(char *data, uint16_t len) {
+  Serial.print("AIO_WARNING: on_throttle:received <- ");
+  Serial.println(data);
+}
 
 
 void setup(void)
@@ -44,6 +57,13 @@ void setup(void)
 
   aio_command.setCallback(vend_callback);
   mqtt.subscribe(&aio_command);
+
+  aio_errors.setCallback(on_aio_error);
+  mqtt.subscribe(&aio_errors);
+
+  aio_throttle.setCallback(on_throttle);
+  mqtt.subscribe(&aio_throttle);
+
   
   //timefeed.setCallback(timecallback);
   //mqtt.subscribe(&timefeed);
@@ -52,6 +72,7 @@ void setup(void)
   lcd.init();
   lcd.backlight();
 
+  Serial.print("Adafruit Max data size: ");
   Serial.println(SUBSCRIPTIONDATALEN);
 
   // Because our slots array only holds referances we need to keep 
@@ -102,6 +123,8 @@ void vend_callback(char *data, uint16_t len) {
   else{
     Serial.println("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
   }
+
+  //TODO:  Set up response and find a way to handle dropped packdets.   perhaps use get?
 }
 
 
