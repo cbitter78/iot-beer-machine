@@ -55,15 +55,9 @@ void setup(void)
   
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
 
-  aio_command.setCallback(vend_callback);
   mqtt.subscribe(&aio_command);
-
-  aio_errors.setCallback(on_aio_error);
   mqtt.subscribe(&aio_errors);
-
-  aio_throttle.setCallback(on_throttle);
   mqtt.subscribe(&aio_throttle);
-
   
   //timefeed.setCallback(timecallback);
   //mqtt.subscribe(&timefeed);
@@ -92,7 +86,7 @@ void setup(void)
 }
 
 
-void vend_callback(char *data, uint16_t len) {
+void vend(char *data) {
   Serial.print("vend_callback:received <- ");
   Serial.println(data);
  
@@ -124,6 +118,7 @@ void vend_callback(char *data, uint16_t len) {
     Serial.println("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
   }
 
+
   //TODO:  Set up response and find a way to handle dropped packdets.   perhaps use get?
 }
 
@@ -131,7 +126,24 @@ void vend_callback(char *data, uint16_t len) {
 void loop(void)
 {
     MQTT_connect();
-    mqtt.processPackets(5000);
+    //mqtt.processPackets(5000);
+    
+    
+    Adafruit_MQTT_Subscribe *sub;
+    while ((sub = mqtt.readSubscription(10000))) {
+      if (sub == &aio_command) {
+        vend((char *)aio_command.lastread);
+      } else if(sub == &aio_errors) {
+        Serial.print(F("ERROR: "));
+        Serial.println((char *)aio_errors.lastread);
+      } else if(sub == &aio_throttle){
+        Serial.print(F("THROTTLE ERROR: "));
+        Serial.println((char *)aio_throttle.lastread);
+      }
+      
+        
+    }
+        
     mqtt.ping();
       
     if (analogRead(A0) > 100){
