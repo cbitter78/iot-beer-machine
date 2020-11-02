@@ -1,13 +1,23 @@
 #! /usr/bin/env python
 
 import random
+import string
 import json
 import re
 import sys
-from Adafruit_IO import Client, Feed
+from Adafruit_IO import Client, Feed, AdafruitIOError, errors
 
 ADAFRUIT_IO_USERNAME = ""
 ADAFRUIT_IO_KEY      = ""
+
+BEERS = [
+    'Dog Fish 60 Minute',
+    'Bells two hearted',
+    'Freshly Squeezed',
+    'All Day IPA',
+    'Guiness',
+    'Ballast Point Grapefruit Sculpin IPA'
+]
 
 # Get the adafruit creds from the arduino code. 
 with open('../iot-beer-machine/secrets.h', 'r') as reader:
@@ -16,25 +26,36 @@ with open('../iot-beer-machine/secrets.h', 'r') as reader:
     ADAFRUIT_IO_KEY      = re.search('AIO_KEY\W+"(\w+)"', d).groups(0)[0]
 
 
+def get_id():
+    return ''.join(random.choice(string.ascii_letters) for i in range(4))
 
-def get_feed(name, aio):
+
+
+def get_feed(feed_name, aio):
     try: # if we have a feed, then fetch it.
-        return aio.feeds(name)
-    except RequestError: # else create it
-        return aio.create_feed(Feed(name=name))
+        return aio.feeds(feed_name)
+    except errors.RequestError: # else create it
+        return aio.create_feed(Feed(feed_name))
 
 def vend(slot):
     aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
-    aio_cmd    = get_feed('iot-beer-command', aio)
-    aio_cmd_rx = get_feed('iot-beer-command-rx', aio)
+    aio_cmd    = get_feed('cmd', aio)
+    aio_cmd_rx = get_feed('cmd-rx', aio)
 
 
 
-    d = json.loads('{"name":"vend","id":"1","slot":0,"args":["Charles"]}')
-    d['slot'] = slot
-    d['id'] = F"{random.randint(10, 99)}"
+    d = json.loads('{"cmd":"vend","id":"1","slot":0,"args":["Charles", "Ballast Point Grapefruit Sculpin"]}')
+    d['slot'] = random.randint(1,2) 
+    d['id'] = get_id()
+    d['args'][1] = BEERS[random.randint(0, len(BEERS) -1)]
     payload = json.dumps(d)
-    print(F"Sending payload {payload}")
+    
+    
+    if len(payload) > 106:
+        print(F"Cant send payload,  its too big.  Max len = 100,  current len = {len(payload)}")
+        return
+
+    print(F"Sending payload {payload} Len: {len(payload)}")
 
     r = aio.send(aio_cmd.name, payload)
     print("data sent")
