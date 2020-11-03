@@ -10,6 +10,7 @@
 #include <SPI.h>
 #include "VendSlot.h"
 #include "util.h"
+#include "lcd_art.h"
 #include "secrets.h"
 
 #define MQTT_DEBUG
@@ -32,7 +33,7 @@ VendSlot  slot2;
 //VendSlot  slot6;
 
 LiquidCrystal_I2C lcd(0x27,20,4); 
-LiquidCrystal_I2C lcd2(0x26,20,4); 
+LiquidCrystal_I2C lcd_msg(0x26,20,4); 
 Adafruit_ADS1115  a2d(0x48);      
 WiFiClient        client;
 
@@ -55,8 +56,31 @@ void setup(void)
    
   a2d.begin();  
   lcd.init();
-  lcd2.init();
   lcd.backlight();
+
+  byte* lcd_custom_chars[8]     = {charWait0, charWait1, charWait2, charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown};
+  byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown};
+  
+  for (int i = 0; i < 8; i++){
+    lcd.createChar(i, lcd_custom_chars[i]);
+  }
+  for (int i = 0; i < 6; i++){
+    lcd.createChar(i, lcd_msg_custom_chars[i]);
+  }
+  
+  lcd.home();
+  lcd.write(0);
+  lcd.write(1);
+  lcd.write(2);
+  lcd.write(3);
+  lcd.write(4);
+  lcd.write(5);
+  lcd.write(6);
+  lcd.write(7);
+
+  delay(3000);
+  lcd_msg.init();
+  
                                                                      
   Serial.print(F("Adafruit:SUBSCRIPTIONDATALEN: "));
   Serial.println(SUBSCRIPTIONDATALEN);
@@ -84,7 +108,7 @@ void setup(void)
   for (int i = 0; i < SLOT_COUNT; i++){
     if ((*slots[i]).slot_status() == VendSlot::SLOT_STATUS_RUNNING_OUT){
       String msg = "WARNING!!!  Slot " + String(i +1) + "  is running OUT of   BEER!!  :(";
-      lcd_display_msg(msg, &lcd2, 100, true, 3000);
+      lcd_display_msg(msg, &lcd_msg, 100, true, 3000);
     }
   }
 }
@@ -141,7 +165,7 @@ void vend(char *data) {
   if (cmd_slot <= SLOT_COUNT && cmd_slot > 0){
     (*slots[cmd_slot - 1]).vend();
 
-    lcd_display_msg(msg, &lcd2, 100, true, 4000);
+    lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
 
     //aio_command_rx.publish(String(cmd_id) + "::OK");
     delay(2000);
