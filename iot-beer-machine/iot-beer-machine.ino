@@ -23,14 +23,14 @@
 /*
  * A slot will need to be defined for each slot in the beer machine.
  */
-#define SLOT_COUNT 2
+#define SLOT_COUNT 6
 VendSlot* slots[SLOT_COUNT];
 VendSlot  slot1;
 VendSlot  slot2;
-//VendSlot  slot3;
-//VendSlot  slot4;
-//VendSlot  slot5;
-//VendSlot  slot6;
+VendSlot  slot3;
+VendSlot  slot4;
+VendSlot  slot5;
+VendSlot  slot6;
 
 LiquidCrystal_I2C lcd(0x27,20,4); 
 LiquidCrystal_I2C lcd_msg(0x26,20,4); 
@@ -65,9 +65,7 @@ void setup(void)
   for (int i = 0; i < 8; i++){
     lcd.createChar(i, lcd_custom_chars[i]);
   }
-  for (int i = 0; i < 6; i++){
-    lcd.createChar(i, lcd_msg_custom_chars[i]);
-  }
+
                                                                      
   Serial.print(F("Adafruit:SUBSCRIPTIONDATALEN: "));
   Serial.println(SUBSCRIPTIONDATALEN);
@@ -78,19 +76,20 @@ void setup(void)
   // a copy of the slot by using a global variable.   If not the slot
   // object will be destroyed and the pointer will point to the wrong
   // memory. 
-  slot1.setup(1, 12, &a2d,   0, &a2d, 2, &lcd,   0);
-  slot2.setup(2, 11, &a2d,   1, &a2d, 3, &lcd,   1);
-//slot3.setup(3, 10, &a2d_2, 0, &a2d, 2, &lcd_2, 0);
-//slot4.setup(4,  9, &a2d_2, 1, &a2d, 3, &lcd_2, 1);
-//slot5.setup(5,  6, &a2d_2, 0, &a2d, 2, &lcd_3, 0);
-//slot6.setup(6,  5, &a2d_2, 1, &a2d, 3, &lcd_3, 1);
+  slot1.setup(1, 12, &a2d,   0, &a2d, 2, &lcd,   0, 7);
+  slot2.setup(2, 11, &a2d,   1, &a2d, 3, &lcd,   0, 12);
+  slot3.setup(3, 12, &a2d,   0, &a2d, 2, &lcd,   0, 17);
+  slot4.setup(4, 11, &a2d,   1, &a2d, 3, &lcd,   1, 7);
+  slot5.setup(5, 12, &a2d,   0, &a2d, 2, &lcd,   1, 12);
+  slot6.setup(6, 11, &a2d,   1, &a2d, 3, &lcd,   1, 17);;
+  /* Wireing for slots in order are 12, 11, 10, 9, 6, 5 for gpio pins.  Above is the wireing for the test rig.*/
 
   slots[0] = &slot1;
   slots[1] = &slot2;
-//  slots[2] = &slot3;
-//  slots[3] = &slot4;
-//  slots[4] = &slot5;
-//  slots[5] = &slot6;
+  slots[2] = &slot3;
+  slots[3] = &slot4;
+  slots[4] = &slot5;
+  slots[5] = &slot6;
 
   for (int i = 0; i < SLOT_COUNT; i++){
     if ((*slots[i]).slot_status() == VendSlot::SLOT_STATUS_RUNNING_OUT){

@@ -9,6 +9,7 @@ VendSlot::VendSlot(){
     _slot_low_adc_pin = 0;
     _lcd              = NULL;
     _lcd_row          = 0;
+    _lcd_column       = 0;
     _vend_status      = VendSlot::VEND_STATUS_NOT_SET_UP;
 }
 
@@ -16,7 +17,7 @@ VendSlot::VendSlot(){
 void VendSlot::setup(int slot_number, int relay_pin, 
                     Adafruit_ADS1115 *vend_adc, int vend_adc_pin, 
                     Adafruit_ADS1115 *slot_low_adc, int slot_low_adc_pin, 
-                    LiquidCrystal_I2C *lcd, int lcd_row){
+                    LiquidCrystal_I2C *lcd, int lcd_row, int lcd_column){
 
     _slot_number      = slot_number;
     _relay_pin        = relay_pin;
@@ -26,6 +27,7 @@ void VendSlot::setup(int slot_number, int relay_pin,
     _slot_low_adc_pin = slot_low_adc_pin;
     _lcd              = lcd;
     _lcd_row          = lcd_row;
+    _lcd_column       = lcd_column;
 
     _clear_dispaly();
     pinMode(_relay_pin, OUTPUT);
@@ -60,9 +62,11 @@ int VendSlot::vend_status(){ return _vend_status; }
 
 
 int VendSlot::vend(){
-     _set_vend_status(VendSlot::VEND_STATUS_VENDING);
      _moter_on();
-     delay(2000);
+     for(int i = 0; i < 10; i++){
+        _delay_with_animation(200);
+     }
+
      int t = 0;
      while (t < 65) {   // This is about a 15 second timeout.   If timeout then the slot is stuck.
        if (_is_vending_done()){
@@ -75,7 +79,7 @@ int VendSlot::vend(){
          }
        }
        t++;
-       delay(200);
+       _delay_with_animation(200);
      }
      _moter_off();
      slot_status();
@@ -83,6 +87,18 @@ int VendSlot::vend(){
      slot_status();
      return VendSlot::VEND_STATUS_STUCK;
 }
+
+
+void VendSlot:: _delay_with_animation(int mills){
+    LiquidCrystal_I2C l = *_lcd;
+    Serial.println(_current_char);
+    l.setCursor(_lcd_column + 2, _lcd_row);
+    l.write(_current_char);
+    delay(mills);
+
+    _current_char = (_current_char == 2) ? 0 : _current_char + 1;
+}
+
 
 
  void VendSlot::_moter_on(){
@@ -97,20 +113,20 @@ int VendSlot::vend(){
    _vend_status = s;
    switch (_vend_status) {
      case VendSlot::VEND_STATUS_READY:    
-       _lcd_display("Ready    ");
+       _lcd_display(6);
        break;
      case VendSlot::VEND_STATUS_VENDING:     
-       _lcd_display("Vending ");
+       _lcd_display(1);
        break;
     case VendSlot::VEND_STATUS_STUCK:     
-       _lcd_display("Stuck   ");
+       _lcd_display(7);
        break;
     case VendSlot::VEND_STATUS_ERROR:     
-       _lcd_display("Error   ");
+       _lcd_display(7);
        break;
    default:
        _vend_status = VendSlot::VEND_STATUS_ERROR;
-       _lcd_display("Error   ");
+       _lcd_display(7);
        break;
    }
  }
@@ -134,16 +150,21 @@ int VendSlot::vend(){
 
  void VendSlot::_lcd_display(char* msg){
     LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(0, _lcd_row);
-    l.print(String(_slot_number) + ": ");
+    l.setCursor(_lcd_column, _lcd_row);
+    l.print(String(_slot_number) + ":");
     l.print(msg);
+ }
+
+
+ void VendSlot::_lcd_display(int customChar){
+    LiquidCrystal_I2C l = *_lcd;
+    l.setCursor(_lcd_column, _lcd_row);
+    l.print(String(_slot_number) + ":");
+    l.write(customChar);
  }
  
  void VendSlot::_clear_dispaly(){
     LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(0, _lcd_row);
-    l.print("Setting up Slot " + String(_slot_number));
-    delay(1000);
-    l.setCursor(0, _lcd_row);
-    l.print("                    "); 
+    l.setCursor(_lcd_column, _lcd_row);
+    l.print(F("          ")); 
  }
