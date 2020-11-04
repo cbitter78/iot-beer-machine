@@ -57,6 +57,7 @@ void setup(void)
   a2d.begin();  
   lcd.init();
   lcd.backlight();
+  lcd_msg.init();
 
   byte* lcd_custom_chars[8]     = {charWait0, charWait1, charWait2, charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown};
   byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown};
@@ -67,20 +68,6 @@ void setup(void)
   for (int i = 0; i < 6; i++){
     lcd.createChar(i, lcd_msg_custom_chars[i]);
   }
-  
-  lcd.home();
-  lcd.write(0);
-  lcd.write(1);
-  lcd.write(2);
-  lcd.write(3);
-  lcd.write(4);
-  lcd.write(5);
-  lcd.write(6);
-  lcd.write(7);
-
-  delay(3000);
-  lcd_msg.init();
-  
                                                                      
   Serial.print(F("Adafruit:SUBSCRIPTIONDATALEN: "));
   Serial.println(SUBSCRIPTIONDATALEN);
@@ -163,12 +150,33 @@ void vend(char *data) {
   String msg = String(recipient) + String("!  Enjoy drinking your ") + String(beer) + String(" :) "); 
   
   if (cmd_slot <= SLOT_COUNT && cmd_slot > 0){
-    (*slots[cmd_slot - 1]).vend();
+    int vend_status = (*slots[cmd_slot - 1]).vend();
+
+    String vend_status_str = "Unknown";
+    switch (vend_status) {
+      
+      case VendSlot::VEND_STATUS_READY :
+        vend_status_str = "OK";
+        break;
+        
+      case VendSlot::VEND_STATUS_STUCK :
+        vend_status_str = "STUCK";
+        break;
+
+      case VendSlot::VEND_STATUS_ERROR :
+        vend_status_str = "ERROR";
+        break;      
+    }
+    
+    String rx = String(cmd_id) + "::" + vend_status_str;
+    char buff[rx.length() + 1];
+    rx.toCharArray(buff, rx.length() +1);
+    if (! aio_command_rx.publish(buff)) {
+      Serial.println(F("Failed to post to cmd_rx"));
+    } 
 
     lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
 
-    //aio_command_rx.publish(String(cmd_id) + "::OK");
-    delay(2000);
   }
   else{
     Serial.println("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");

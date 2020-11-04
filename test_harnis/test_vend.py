@@ -37,7 +37,7 @@ def get_feed(feed_name, aio):
     except errors.RequestError: # else create it
         return aio.create_feed(Feed(feed_name))
 
-def vend(slot):
+def vend():
     aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
     aio_cmd    = get_feed('cmd', aio)
     aio_cmd_rx = get_feed('cmd-rx', aio)
@@ -61,4 +61,4 @@ def vend(slot):
     print("data sent")
 
 if __name__ == "__main__":
-    vend(int(sys.argv[1]))
+    vend()
