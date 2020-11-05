@@ -57,7 +57,10 @@ int VendSlot::slot_status(){
 }
 
     
-int VendSlot::vend_status(){ return _vend_status; }
+int VendSlot::vend_status(){ 
+  return _vend_status; 
+  // TODO:  Set LED Slot Status
+}
 
 
 
@@ -83,7 +86,7 @@ int VendSlot::vend(){
      }
      _moter_off();
      slot_status();
-     _set_vend_status(VendSlot::VEND_STATUS_STUCK);
+     _set_vend_status(VendSlot::VEND_STATUS_STUCK);  //TODO: We need an icon for this
      slot_status();
      return VendSlot::VEND_STATUS_STUCK;
 }
@@ -91,11 +94,9 @@ int VendSlot::vend(){
 
 void VendSlot:: _delay_with_animation(int mills){
     LiquidCrystal_I2C l = *_lcd;
-    Serial.println(_current_char);
     l.setCursor(_lcd_column + 2, _lcd_row);
     l.write(_current_char);
     delay(mills);
-
     _current_char = (_current_char == 2) ? 0 : _current_char + 1;
 }
 
