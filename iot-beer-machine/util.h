@@ -4,6 +4,41 @@
 
 #define MAX_MILLIS 4294967295
 
+// Turn on/off debug output messages.
+#define P_DEBUG
+// Turn on/off error output messages.
+#define P_ERROR
+
+// Set where debug messages will be printed.
+#define DEBUG_PRINTER Serial
+// If using something like Zero or Due, change the above to SerialUSB
+
+// Define actual debug output functions when necessary.
+#ifdef P_DEBUG
+#define DEBUG_PRINT(...)                                                       \
+  { DEBUG_PRINTER.print(__VA_ARGS__); }
+#define DEBUG_PRINTLN(...)                                                     \
+  { DEBUG_PRINTER.println(__VA_ARGS__); }
+#else
+#define DEBUG_PRINT(...)                                                       \
+  {}
+#define DEBUG_PRINTLN(...)                                                     \
+  {}
+#endif
+
+#ifdef P_ERROR
+#define ERROR_PRINT(...)                                                       \
+  { DEBUG_PRINTER.print(__VA_ARGS__); }
+#define ERROR_PRINTLN(...)                                                     \
+  { DEBUG_PRINTER.println(__VA_ARGS__); }
+#else
+#define ERROR_PRINT(...)                                                       \
+  {}
+#define ERROR_PRINTLN(...)                                                     \
+  {}
+#endif
+
+
 unsigned long MQTT_NEXT_PING_TIME;
 int MQTT_PING_INTERVAL = 30000;
 

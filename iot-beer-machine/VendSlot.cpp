@@ -65,7 +65,10 @@ int VendSlot::vend_status(){
 
 
 int VendSlot::vend(){
+    Serial.print("Vending Slot: ");
+    Serial.println(_slot_number);
      _moter_on();
+     delay(500);
      for(int i = 0; i < 10; i++){
         _delay_with_animation(200);
      }

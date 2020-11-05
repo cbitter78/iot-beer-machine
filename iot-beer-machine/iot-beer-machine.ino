@@ -38,8 +38,8 @@ Adafruit_ADS1115  a2d(0x48);
 WiFiClient        client;
 
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx",  /* QOS: Once */ 1);
-Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd",     /* QOS: Once */ 1);
+Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
+Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
 Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/errors");
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 
@@ -109,11 +109,11 @@ void loop(void)
       if (sub == &aio_command) {
         vend((char *)aio_command.lastread);
       } else if(sub == &aio_errors) {
-        Serial.print(F("ERROR: "));
-        Serial.println((char *)aio_errors.lastread);
+        ERROR_PRINT(F("ERROR: "));
+        ERROR_PRINTLN((char *)aio_errors.lastread);
       } else if(sub == &aio_throttle){
-        Serial.print(F("THROTTLE ERROR: "));
-        Serial.println((char *)aio_throttle.lastread);
+        ERROR_PRINT(F("THROTTLE ERROR: "));
+        ERROR_PRINTLN((char *)aio_throttle.lastread);
       }  
     }
 
@@ -125,8 +125,8 @@ void loop(void)
 
 
 void vend(char *data) {
-  Serial.print("vend_callback:received <- ");
-  Serial.println(data);
+  DEBUG_PRINT(F("vend_callback:received <- "));
+  DEBUG_PRINTLN(data);
  
   // Parse the JSON document 
   // Example:
@@ -135,8 +135,8 @@ void vend(char *data) {
   DynamicJsonDocument doc(200);
   DeserializationError err = deserializeJson(doc, data);
   if (err) {
-    Serial.print(F("Parsing command failed: "));
-    Serial.println(err.c_str());
+    DEBUG_PRINT(F("Parsing command failed: "));
+    DEBUG_PRINTLN(err.c_str());
     return;
   }
 
@@ -166,19 +166,21 @@ void vend(char *data) {
         vend_status_str = "ERROR";
         break;      
     }
-    
+
     String rx = String(cmd_id) + "::" + vend_status_str;
     char buff[rx.length() + 1];
     rx.toCharArray(buff, rx.length() +1);
     if (! aio_command_rx.publish(buff)) {
-      Serial.println(F("Failed to post to cmd_rx"));
+      ERROR_PRINT(F("Failed to post to cmd_rx"));
+      ERROR_PRINTLN(buff);
     } 
 
     lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
 
   }
   else{
-    Serial.println("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
+    //TODO: Post an error back
+    ERROR_PRINTLN("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
   }
 
 }

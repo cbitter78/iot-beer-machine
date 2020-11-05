@@ -47,7 +47,7 @@ def vend():
     d = json.loads('{"cmd":"vend","id":"1","slot":0,"args":["Charles", "Ballast Point Grapefruit Sculpin"]}')
     d['slot'] = random.randint(1,6) 
     d['id'] = get_id()
-    d['args'][1] = BEERS[d['slot']]
+    d['args'][1] = BEERS[d['slot'] - 1]
     payload = json.dumps(d)
     
     
