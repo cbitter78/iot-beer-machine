@@ -12,8 +12,10 @@
 #include "util.h"
 #include "lcd_art.h"
 #include "secrets.h"
+#include "logging.h"
 
-#define MQTT_DEBUG
+
+
 
 #define WINC_CS   8
 #define WINC_IRQ  7
@@ -119,13 +121,12 @@ void loop(void)
 
     mqtt_ping(&mqtt);
        
-    flash();
-    delay(250);
+    flash(13);
 }
 
 
 void vend(char *data) {
-  DEBUG_PRINT(F("vend_callback:received <- "));
+  DEBUG_PRINT(F("vend:received <- "));
   DEBUG_PRINTLN(data);
  
   // Parse the JSON document 
@@ -135,8 +136,8 @@ void vend(char *data) {
   DynamicJsonDocument doc(200);
   DeserializationError err = deserializeJson(doc, data);
   if (err) {
-    DEBUG_PRINT(F("Parsing command failed: "));
-    DEBUG_PRINTLN(err.c_str());
+    WARN_PRINT(F("Parsing command failed: "));
+    WARN_PRINTLN(err.c_str());
     return;
   }
 
@@ -147,13 +148,11 @@ void vend(char *data) {
   int         cmd_slot  = doc["slot"];
   
   String msg = String(recipient) + String("!  Enjoy drinking your ") + String(beer) + String(" :) "); 
-  
+  String vend_status_str = "Unknown";
   if (cmd_slot <= SLOT_COUNT && cmd_slot > 0){
     int vend_status = (*slots[cmd_slot - 1]).vend();
 
-    String vend_status_str = "Unknown";
-    switch (vend_status) {
-      
+    switch (vend_status) { 
       case VendSlot::VEND_STATUS_READY :
         vend_status_str = "OK";
         break;
@@ -167,21 +166,22 @@ void vend(char *data) {
         break;      
     }
 
-    String rx = String(cmd_id) + "::" + vend_status_str;
-    char buff[rx.length() + 1];
-    rx.toCharArray(buff, rx.length() +1);
-    if (! aio_command_rx.publish(buff)) {
-      ERROR_PRINT(F("Failed to post to cmd_rx"));
-      ERROR_PRINTLN(buff);
-    } 
-
     lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
 
   }
   else{
     //TODO: Post an error back
+    vend_status_str = "NO_SUCH_SLOT";
     ERROR_PRINTLN("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
   }
+
+  String rx = String(cmd_id) + "::" + vend_status_str;
+  char buff[rx.length() + 1];
+  rx.toCharArray(buff, rx.length() +1);
+  if (! aio_command_rx.publish(buff)) {
+    ERROR_PRINT(F("Failed to post to cmd_rx"));
+    ERROR_PRINTLN(buff);
+  } 
 
 }
 

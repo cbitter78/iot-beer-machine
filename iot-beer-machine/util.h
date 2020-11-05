@@ -2,45 +2,16 @@
 #include <LiquidCrystal_I2C.h>
 #include <Adafruit_MQTT.h>
 
+
+
+
+
+
+
 #define MAX_MILLIS 4294967295
-
-// Turn on/off debug output messages.
-#define P_DEBUG
-// Turn on/off error output messages.
-#define P_ERROR
-
-// Set where debug messages will be printed.
-#define DEBUG_PRINTER Serial
-// If using something like Zero or Due, change the above to SerialUSB
-
-// Define actual debug output functions when necessary.
-#ifdef P_DEBUG
-#define DEBUG_PRINT(...)                                                       \
-  { DEBUG_PRINTER.print(__VA_ARGS__); }
-#define DEBUG_PRINTLN(...)                                                     \
-  { DEBUG_PRINTER.println(__VA_ARGS__); }
-#else
-#define DEBUG_PRINT(...)                                                       \
-  {}
-#define DEBUG_PRINTLN(...)                                                     \
-  {}
-#endif
-
-#ifdef P_ERROR
-#define ERROR_PRINT(...)                                                       \
-  { DEBUG_PRINTER.print(__VA_ARGS__); }
-#define ERROR_PRINTLN(...)                                                     \
-  { DEBUG_PRINTER.println(__VA_ARGS__); }
-#else
-#define ERROR_PRINT(...)                                                       \
-  {}
-#define ERROR_PRINTLN(...)                                                     \
-  {}
-#endif
-
-
+#define MQTT_PING_INTERVAL 30000
 unsigned long MQTT_NEXT_PING_TIME;
-int MQTT_PING_INTERVAL = 30000;
+
 
 void lcd_display_msg(String msg, LiquidCrystal_I2C *lcd_20_x_4, int scroll_delay, bool clear_after, int clear_after_delay){
   LiquidCrystal_I2C l = *lcd_20_x_4;
@@ -93,42 +64,12 @@ void mqtt_ping(Adafruit_MQTT_Client *mqtt){
 }
 
 
-void print_adc(Adafruit_ADS1115 b, LiquidCrystal_I2C lcd){
-  int x = 3;
-  int ports[x + 1];
-  
-  for (int i = 0; i <= x; i++) {
-    int v = b.readADC_SingleEnded(i);
-    if (v == 65535){ v = 0; }
-    ports[i] = v;
-  }
 
-  lcd.setCursor(0,2);
-  lcd.print("                   ");
-  lcd.setCursor(0,3);
-  lcd.print("                   ");
-  
-  lcd.setCursor(0,2);
-  lcd.print("0:" + String(ports[0]));
-  Serial.println("ADC:0:" + String(ports[0]));
-  
-  lcd.setCursor(10,2);
-  lcd.print("1:" + String(ports[1]));
-  Serial.println("ADC:1:" + String(ports[1]));
 
-  lcd.setCursor(0,3);
-  lcd.print("2:" + String(ports[2]));
-  Serial.println("ADC:2:" + String(ports[2]));
-
-  lcd.setCursor(10,3);
-  lcd.print("3:" + String(ports[3]));
-  Serial.println("ADC:" + String(ports[3]));
-}
-
-void flash(){
-  digitalWrite(13, HIGH);
+void flash(int pin){
+  digitalWrite(pin, HIGH);
   delay(250);
-  digitalWrite(13, LOW);
+  digitalWrite(pin, LOW);
 }
 
 
