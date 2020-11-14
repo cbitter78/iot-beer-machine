@@ -14,8 +14,8 @@
 #include "secrets.h"
 #include "logging.h"
 
-
-
+#include "mock_machine.h"  /* Only used when testing. */
+//#include "machine.h"      /* Used for beer machine. */
 
 #define WINC_CS   8
 #define WINC_IRQ  7
@@ -23,7 +23,7 @@
 #define WINC_EN   2  
 
 /*
- * A slot will need to be defined for each slot in the beer machine.
+ A slot will need to be defined for each slot in the beer machine.
  */
 #define SLOT_COUNT 6
 VendSlot* slots[SLOT_COUNT];
@@ -34,9 +34,14 @@ VendSlot  slot4;
 VendSlot  slot5;
 VendSlot  slot6;
 
+#define ADC_COUNT 3
+Adafruit_ADS1115* adcs[ADC_COUNT];
+Adafruit_ADS1115  adc0(ADC_0_ADDRESS); 
+Adafruit_ADS1115  adc1(ADC_1_ADDRESS); 
+Adafruit_ADS1115  adc2(ADC_2_ADDRESS); 
+
 LiquidCrystal_I2C lcd(0x27,20,4); 
-LiquidCrystal_I2C lcd_msg(0x26,20,4); 
-Adafruit_ADS1115  a2d(0x48);      
+LiquidCrystal_I2C lcd_msg(0x26,20,4);    
 WiFiClient        client;
 
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
@@ -56,17 +61,21 @@ void setup(void)
   mqtt.subscribe(&aio_errors);
   mqtt.subscribe(&aio_throttle);
    
-  a2d.begin();  
+   
   lcd.init();
   lcd.backlight();
   lcd_msg.init();
 
-  byte* lcd_custom_chars[8]     = {charWait0, charWait1, charWait2, charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown};
-  byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown};
+  byte* lcd_custom_chars[8]     = {charWait0, charWait1, charWait2, charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charSkull};
+  byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown, charSkull};
   
   for (int i = 0; i < 8; i++){
     lcd.createChar(i, lcd_custom_chars[i]);
   }
+  for (int i = 0; i < 6; i++){
+    lcd_msg.createChar(i, lcd_msg_custom_chars[i]);
+  }
+
 
                                                                      
   Serial.print(F("Adafruit:SUBSCRIPTIONDATALEN: "));
@@ -74,17 +83,29 @@ void setup(void)
   Serial.print(F("Adafruit::MAXBUFFERSIZE: "));
   Serial.println(MAXBUFFERSIZE);
 
-  // Because our slots array only holds referances we need to keep 
-  // a copy of the slot by using a global variable.   If not the slot
-  // object will be destroyed and the pointer will point to the wrong
-  // memory. 
-  slot1.setup(1, 12, &a2d,   0, &a2d, 2, &lcd,   0, 7);
-  slot2.setup(2, 11, &a2d,   1, &a2d, 3, &lcd,   0, 12);
-  slot3.setup(3, 12, &a2d,   0, &a2d, 2, &lcd,   0, 17);
-  slot4.setup(4, 11, &a2d,   1, &a2d, 3, &lcd,   1, 7);
-  slot5.setup(5, 12, &a2d,   0, &a2d, 2, &lcd,   1, 12);
-  slot6.setup(6, 11, &a2d,   1, &a2d, 3, &lcd,   1, 17);;
-  /* Wireing for slots in order are 12, 11, 10, 9, 6, 5 for gpio pins.  Above is the wireing for the test rig.*/
+  /*
+  Set up an array for ADC's so that whenwe set up the slots
+  below we can use an ADC number to get the correct object.
+  */
+  adcs[0] = &adc0;
+  adcs[1] = &adc1;
+  adcs[2] = &adc2;
+  for (int i = 0; i < ADC_COUNT; i++){
+    (*adcs[i]).begin();
+  }
+
+  /* 
+  Because our slots array only holds referances we need to keep 
+  a copy of the slot by using a global variable.   If not the slot
+  object will be destroyed and the pointer will point to the wrong
+  memory.
+  */ 
+  slot1.setup(1, SLOT_1_DIO_PIN, adcs[SLOT_1_VEND_ADC], SLOT_1_VEND_ADC_PIN, adcs[SLOT_1_EMPTY_ADC], SLOT_1_EMPTY_ADC_PIN, &lcd, 0, 7);
+  slot2.setup(2, SLOT_2_DIO_PIN, adcs[SLOT_2_VEND_ADC], SLOT_2_VEND_ADC_PIN, adcs[SLOT_2_EMPTY_ADC], SLOT_2_EMPTY_ADC_PIN, &lcd, 0, 12);
+  slot3.setup(3, SLOT_3_DIO_PIN, adcs[SLOT_3_VEND_ADC], SLOT_3_VEND_ADC_PIN, adcs[SLOT_3_EMPTY_ADC], SLOT_3_EMPTY_ADC_PIN, &lcd, 0, 17);
+  slot4.setup(4, SLOT_4_DIO_PIN, adcs[SLOT_4_VEND_ADC], SLOT_4_VEND_ADC_PIN, adcs[SLOT_4_EMPTY_ADC], SLOT_4_EMPTY_ADC_PIN, &lcd, 1, 7);
+  slot5.setup(5, SLOT_5_DIO_PIN, adcs[SLOT_5_VEND_ADC], SLOT_5_VEND_ADC_PIN, adcs[SLOT_5_EMPTY_ADC], SLOT_5_EMPTY_ADC_PIN, &lcd, 1, 12);
+  slot6.setup(6, SLOT_6_DIO_PIN, adcs[SLOT_6_VEND_ADC], SLOT_6_VEND_ADC_PIN, adcs[SLOT_6_EMPTY_ADC], SLOT_6_EMPTY_ADC_PIN, &lcd, 1, 17);;
 
   slots[0] = &slot1;
   slots[1] = &slot2;
