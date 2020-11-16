@@ -3,6 +3,7 @@
 
 #include <Adafruit_ADS1015.h>
 #include <LiquidCrystal_I2C.h>
+#include "logging.h"
 
 
 class VendSlot{

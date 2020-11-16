@@ -14,8 +14,8 @@
 #include "secrets.h"
 #include "logging.h"
 
-#include "mock_machine.h"  /* Only used when testing. */
-//#include "machine.h"      /* Used for beer machine. */
+//#include "mock_machine.h"  /* Only used when testing. */
+#include "machine.h"      /* Used for beer machine. */
 
 #define WINC_CS   8
 #define WINC_IRQ  7
@@ -41,7 +41,7 @@ Adafruit_ADS1115  adc1(ADC_1_ADDRESS);
 Adafruit_ADS1115  adc2(ADC_2_ADDRESS); 
 
 LiquidCrystal_I2C lcd(0x27,20,4); 
-LiquidCrystal_I2C lcd_msg(0x26,20,4);    
+LiquidCrystal_I2C lcd_msg(0x25,20,4);    
 WiFiClient        client;
 
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
@@ -53,7 +53,7 @@ Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USER
 
 void setup(void)
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
 
@@ -114,12 +114,12 @@ void setup(void)
   slots[4] = &slot5;
   slots[5] = &slot6;
 
-  for (int i = 0; i < SLOT_COUNT; i++){
-    if ((*slots[i]).slot_status() == VendSlot::SLOT_STATUS_RUNNING_OUT){
-      String msg = "WARNING!!!  Slot " + String(i +1) + "  is running OUT of   BEER!!  :(";
-      lcd_display_msg(msg, &lcd_msg, 100, true, 3000);
-    }
-  }
+//  for (int i = 0; i < SLOT_COUNT; i++){
+//    if ((*slots[i]).slot_status() == VendSlot::SLOT_STATUS_RUNNING_OUT){
+//      String msg = "WARNING!!!  Slot " + String(i +1) + "  is running OUT of   BEER!!  :(";
+//      lcd_display_msg(msg, &lcd_msg, 100, true, 3000);
+//    }
+//  }
 }
 
 
@@ -187,7 +187,7 @@ void vend(char *data) {
         break;      
     }
 
-    lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
+    //lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
 
   }
   else{

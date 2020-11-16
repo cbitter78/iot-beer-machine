@@ -48,7 +48,7 @@ void VendSlot::reset(){
 int VendSlot::slot_status(){
   int v = _read_adc(_slot_low_adc, _slot_low_adc_pin);  
   if (v > 200){
-    Serial.println("Slot " + String(_slot_number) + " is running out of beer");
+    WARN_PRINTLN("Slot " + String(_slot_number) + " is running out of beer");
     return VendSlot::SLOT_STATUS_RUNNING_OUT;
   }else
   {
@@ -65,27 +65,28 @@ int VendSlot::vend_status(){
 
 
 int VendSlot::vend(){
-    Serial.print("Vending Slot: ");
-    Serial.println(_slot_number);
+    INFO_PRINT("Vending Slot: ");
+    INFO_PRINT(_slot_number);
      _moter_on();
-     delay(500);
-     for(int i = 0; i < 10; i++){
-        _delay_with_animation(200);
+     for(int i = 0; i < 15; i++){
+        _delay_with_animation(100);
      }
 
      int t = 0;
-     while (t < 65) {   // This is about a 15 second timeout.   If timeout then the slot is stuck.
+     while (t < 200) {   // This is about a 20 second timeout.   If timeout then the slot is stuck.
        if (_is_vending_done()){
-         delay(100);
+        delay(25);
          if (_is_vending_done()){
-           _moter_off();
-           _set_vend_status(VendSlot::VEND_STATUS_READY);
-           slot_status();
-           return VendSlot::VEND_STATUS_READY;
+            delay(25);
+             if (_is_vending_done()){
+               _moter_off();
+               _set_vend_status(VendSlot::VEND_STATUS_READY);
+               return VendSlot::VEND_STATUS_READY;
+             }
          }
        }
        t++;
-       _delay_with_animation(200);
+       _delay_with_animation(100);
      }
      _moter_off();
      slot_status();
@@ -106,10 +107,12 @@ void VendSlot:: _delay_with_animation(int mills){
 
 
  void VendSlot::_moter_on(){
+   INFO_PRINTLN(F("Turning moter on"));
    digitalWrite(_relay_pin, LOW);
  }
 
  void VendSlot::_moter_off(){
+   INFO_PRINTLN(F("Turning moter off"));
    digitalWrite(_relay_pin, HIGH);
  }
 
@@ -137,6 +140,8 @@ void VendSlot:: _delay_with_animation(int mills){
  
  bool VendSlot::_is_vending_done(){
    uint16_t v = _read_adc(_vend_adc, _vend_adc_pin);
+   DEBUG_PRINT("VENDING ADC READ: ");
+   DEBUG_PRINTLN(v);
    if (v > 2000){
      return false;  // This means there is the circut is closed (has power) and vending is still taking place.
    }
