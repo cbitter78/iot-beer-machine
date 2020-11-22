@@ -30,8 +30,9 @@ void VendSlot::setup(int slot_number, int relay_pin,
     _lcd_column       = lcd_column;
 
     _clear_dispaly();
-    pinMode(_relay_pin, OUTPUT);
     digitalWrite(_relay_pin, HIGH);
+    pinMode(_relay_pin, OUTPUT);
+    
 
     reset();
     slot_status();
