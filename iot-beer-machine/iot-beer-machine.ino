@@ -5,14 +5,21 @@
 #include <Adafruit_MQTT_Client.h>
 #include <ArduinoJson.h>                    // https://arduinojson.org/v6/assistant/
 #include <LiquidCrystal_I2C.h>
+#include <DallasTemperature.h>
+#include <OneWire.h>
 #include <WiFi101.h>
 #include <Wire.h>
 #include <SPI.h>
 #include "VendSlot.h"
+#include "yhdc.h"
 #include "util.h"
 #include "lcd_art.h"
 #include "secrets.h"
 #include "logging.h"
+
+Adafruit_BME280 bme;
+
+
 
 //#include "mock_machine.h"  /* Only used when testing. */
 #include "machine.h"      /* Used for beer machine. */
@@ -41,7 +48,6 @@ Adafruit_ADS1115  adc1(ADC_1_ADDRESS);
 Adafruit_ADS1115  adc2(ADC_2_ADDRESS); 
 
 LiquidCrystal_I2C lcd(0x27,20,4); 
-LiquidCrystal_I2C lcd_msg(0x25,20,4);    
 WiFiClient        client;
 
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
@@ -51,9 +57,18 @@ Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USER
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 
 
+OneWire oneWire(15);
+DallasTemperature internalTempSensor(&oneWire);
+
 void setup(void)
 {
   Serial.begin(115200);
+  
+  internalTempSensor.begin();
+  unsigned status = bme.begin();  
+  if (!status) {
+      ERROR_PRINTLN(F("Could not find a valid BME280 sensor, check wiring, address, sensor ID!"));
+  }
   
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
 
@@ -64,17 +79,15 @@ void setup(void)
    
   lcd.init();
   lcd.backlight();
-  lcd_msg.init();
+
 
   byte* lcd_custom_chars[8]     = {charWait0, charWait1, charWait2, charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charSkull};
-  byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown, charSkull};
+ // byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown, charSkull};
   
   for (int i = 0; i < 8; i++){
     lcd.createChar(i, lcd_custom_chars[i]);
   }
-  for (int i = 0; i < 6; i++){
-    lcd_msg.createChar(i, lcd_msg_custom_chars[i]);
-  }
+
 
 
                                                                      
@@ -143,7 +156,73 @@ void loop(void)
     mqtt_ping(&mqtt);
        
     flash(13);
+    print_amps();
+    print_internal_temp();
+    print_external_temp();
 }
+
+void print_external_temp(){
+    float c = bme.readTemperature();
+    float f = (c*1.8)+32.0f;
+    float hPa = bme.readPressure() / 100.0F;
+    float inHg = (hPa / 3386.0F) * 100.0F;
+    float h = bme.readHumidity();
+    
+    INFO_PRINT(F("Exterinal Temp: "));
+    INFO_PRINT(c,2);
+    INFO_PRINT(F(" *C  "));
+    INFO_PRINT(f,2);
+    INFO_PRINTLN(F(" *F"));
+
+    INFO_PRINT(F("Exterinal Pressure: "));
+    INFO_PRINT(hPa, 4);
+    INFO_PRINT(F(" hPa "));
+    INFO_PRINT(inHg, 4);
+    INFO_PRINTLN(F(" inHg"));
+
+    INFO_PRINT(F("Exterinal Humidity: "));
+    INFO_PRINT(h, 4);
+    INFO_PRINTLN(F("%"));
+
+    lcd.setCursor(13, 2);
+    lcd.print(F("E:"));
+    lcd.print(f, 1);
+    lcd.print((char)223);
+}
+
+
+void print_internal_temp(){
+  float Celcius=0;
+  float Fahrenheit=0;
+
+  internalTempSensor.requestTemperatures(); 
+  Celcius =    internalTempSensor.getTempCByIndex(0);
+  Fahrenheit = internalTempSensor.toFahrenheit(Celcius);
+  INFO_PRINT(F("Internal Temp in Celcius: "));
+  INFO_PRINTLN(Celcius, 4);
+  INFO_PRINT(F("Internal Temp in Fahrenheit: "));
+  INFO_PRINTLN(Fahrenheit, 4);
+  lcd.setCursor(6, 2);
+  lcd.print(F("I:"));
+  lcd.print(Fahrenheit, 1);
+  lcd.print((char)223);
+}
+
+void print_amps(){
+    float ACCurrentValue = readACCurrentValue(A0);
+    INFO_PRINT(F("Amps: "));
+    INFO_PRINT(ACCurrentValue, 2);
+    INFO_PRINT(F(" Watts: "));
+    INFO_PRINTLN(ACCurrentValue * 110, 1);
+    lcd.setCursor(0, 2);
+    lcd.print(ACCurrentValue * 110, 1);
+    lcd.print(F("W"));
+}
+
+
+
+
+
 
 
 void vend(char *data) {
