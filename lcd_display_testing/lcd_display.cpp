@@ -44,6 +44,19 @@ void LcdDisplay::init(LiquidCrystal_I2C *lcd){
     l.createChar(LCD_CUSTOM_CHAR_ERROR, frown);
 }
 
+void LcdDisplay::start_vend(int slot, const char beer[], const char drinker[]){
+  LiquidCrystal_I2C l = *_lcd;
+  l.clear();
+  l.home();
+  l.print("Vending ");
+  l.print(beer);
+  l.print(" From Slot ");
+  l.print(SLOT_NAMES[slot]);
+  l.print(" For ");
+  l.print(drinker);
+  l.print(" to enjoy.");
+}
+
 
 void LcdDisplay::disply_msg(const char msg[], int clear_after_delay){
   scrool_msg(msg, 0, clear_after_delay);
@@ -68,16 +81,16 @@ void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int clear_after_
         break;
     }
     l.print(msg[i]);
-    delay(scroll_delay);
+    if (scroll_delay > 0) { delay(scroll_delay); }
   }
   delay(clear_after_delay);
-  repaint();
+  display_default_status();
 }
 
 
 
 
-void LcdDisplay::repaint(){
+void LcdDisplay::display_default_status(){
     DEBUG_PRINTLN(F("LcdDisplay::repaint: Re-Painting the LCD Screen..."));
     clear();
     set_wifi_status();

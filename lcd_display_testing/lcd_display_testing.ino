@@ -20,29 +20,47 @@ void setup(void)
   lcd.backlight();
   l_display.init(&lcd);
 
-  //l_display.repaint();
-  wifi_connect();
+  l_display.display_default_status();
   l_display.set_slot_status(1, 0);
+  delay(1000);
   l_display.set_slot_status(2, 0);
+  delay(1000);
   l_display.set_slot_status(3, 0);
+  delay(1000);
   l_display.set_slot_status(5, 0);
+  delay(1000);
   l_display.set_slot_status(4, 0);
-  l_display.disply_msg("I love to display messages!! Becuse its lots and lots of fun!", 5000);
-  l_display.scrool_msg("The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...", 50, 5000);
+  delay(1000);
+  
+ 
+  wifi_connect();
+  delay(3000);
+
 }
 
 
 
 void loop(){
- 
   flash(13);
   wifi_connect();
-  delay(5000);
-  DEBUG_PRINTLN("Not doing much...");
-  l_display.scrool_msg("The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...", 50, 5000);
+  delay(500);
+  if (analogRead(0) > 100){
+    vend(0);
+  }
 
-
+  if (analogRead(1) > 100){
+    vend(1);
+  }
 }
+
+void vend(int slot){
+  INFO_PRINT(F("Vending Slot "));
+  INFO_PRINTLN(slot);
+  l_display.start_vend(slot, "Guiness", "Charles");
+  delay(5000);
+  l_display.display_default_status();
+}
+
 
 void flash(int pin){
   digitalWrite(pin, HIGH);

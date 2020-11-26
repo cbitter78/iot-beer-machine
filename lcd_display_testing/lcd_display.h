@@ -54,7 +54,8 @@ public:
   void scrool_msg(const char msg[], int scroll_delay, int clear_after_delay);
   void delay_with_animation(int mills, int slot); 
   void display_network_info();
-  void repaint();
+  void display_default_status();
+  void start_vend(int slot, const char beer[], const char drinker[]);
 
 
 protected:
