@@ -6,9 +6,9 @@
 #include <WiFi101.h>
 #include "logging.h"
 
-#define LCD_CUSTOM_CHAR_WAIT1             0
-#define LCD_CUSTOM_CHAR_WAIT2             1
-#define LCD_CUSTOM_CHAR_WAIT3             2
+#define LCD_CUSTOM_CHAR_PACK_MAN_OPEN     0
+#define LCD_CUSTOM_CHAR_PACK_MAN_CLOSED   1
+#define LCD_CUSTOM_CHAR_PACK_MAN_GOAST    2
 #define LCD_CUSTOM_CHAR_VERRY_BAD         3
 #define LCD_CUSTOM_CHAR_AIO_CONNECTED     4
 #define LCD_CUSTOM_CHAR_AIO_NOT_CONNECTED 5
@@ -19,6 +19,7 @@
 #define LCD_CHAR_WIFI_NOT_CONNECTED (char)B10110010
 #define LCD_CHAR_DEGREE             (char)B11011111
 #define LCD_CHAR_OHMS               (char)B11110100
+#define LCD_CHAR_PACK_MAN_FOOD      (char)B10100101
 
 const char SLOT_NAMES[]   = { '1', '2', '3', '4', '5', '6' };
 const int  SLOT_COLUMNS[] = {  2,   6,  10,   2,   6,   10 };
@@ -55,7 +56,9 @@ public:
   void delay_with_animation(int mills, int slot); 
   void display_network_info();
   void display_default_status();
-  void start_vend(int slot, const char beer[], const char drinker[]);
+  void start_vend(int slot, const char beer[]);
+  void finish_vend(const char beer[], const char drinker[], int clear_after_delay);
+  void vend_animation(int delay_time);
 
 
 protected:
@@ -68,6 +71,8 @@ protected:
   float _amps;
   float _watts;
   int _slot_status[6];
+  int _slot_animation_col;
+  int _slot_animation_skip;
 };
 
 #endif // LCD_DISPLAY_H

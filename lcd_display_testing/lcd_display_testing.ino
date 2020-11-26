@@ -21,28 +21,36 @@ void setup(void)
   l_display.init(&lcd);
 
   l_display.display_default_status();
-  l_display.set_slot_status(1, 0);
-  delay(1000);
-  l_display.set_slot_status(2, 0);
-  delay(1000);
-  l_display.set_slot_status(3, 0);
-  delay(1000);
-  l_display.set_slot_status(5, 0);
-  delay(1000);
-  l_display.set_slot_status(4, 0);
-  delay(1000);
-  
- 
-  wifi_connect();
-  delay(3000);
 
+  l_display.set_wifi_status();
+  delay(800);
+  l_display.set_adafruit_status(true);
+  delay(800);
+  l_display.set_internal_temp(33.45774F);
+  delay(800);
+  l_display.set_external_temp(72.12558F);
+  delay(800);
+  l_display.set_external_humidity(95.17544F);
+  delay(800);
+  l_display.set_external_inHg(32.81447F);
+  delay(800);
+  l_display.set_amps(4.25218F);
+  delay(800);
+  l_display.set_watts(467.73908F);
+  delay(800);
+  for (int i = 0; i < 6; i++){
+     l_display.set_slot_status(i, 0);
+     delay(800);
+  }
+  l_display.set_slot_status(4, 10);
+  l_display.set_slot_status(2, 50);
 }
 
 
 
 void loop(){
   flash(13);
-  wifi_connect();
+  //wifi_connect();
   delay(500);
   if (analogRead(0) > 100){
     vend(0);
@@ -56,8 +64,11 @@ void loop(){
 void vend(int slot){
   INFO_PRINT(F("Vending Slot "));
   INFO_PRINTLN(slot);
-  l_display.start_vend(slot, "Guiness", "Charles");
-  delay(5000);
+  l_display.start_vend(slot, "Guiness");
+  for(int i = 0; i < 400; i++){
+    l_display.vend_animation(50);  
+  }
+  l_display.finish_vend("Guiness", "Charles", 4000);
   l_display.display_default_status();
 }
 

@@ -8,13 +8,15 @@ For Character Map see https://www.sparkfun.com/datasheets/LCD/HD44780.pdf page 1
 
 LcdDisplay::LcdDisplay(){
     _lcd = NULL;
-    _adafruit_status   = false;
-    _internal_temp     = 33.45774F;
-    _external_temp     = 72.12558F;
-    _external_inHg     = 32.81447F;
-    _external_humidity = 95.17544F;
-    _amps              =  4.25218F;
-    _watts             =467.73908F;
+    _adafruit_status     = false;
+    _slot_animation_col  = 0;
+    _slot_animation_skip = 0;
+    _internal_temp       = 0.0F;
+    _external_temp       = 0.0F;;
+    _external_inHg       = 0.0F;;
+    _external_humidity   = 0.0F;;
+    _amps                = 0.0F;;
+    _watts               = 0.0F;;
     for (int i = 0; i < 7; i++){
         _slot_status[i] = -1;
     }
@@ -26,17 +28,17 @@ void LcdDisplay::init(LiquidCrystal_I2C *lcd){
     LiquidCrystal_I2C l = *_lcd;  
 
     // See https://maxpromer.github.io/LCD-Character-Creator/ to make custom LCD characters
-    byte wait0[]                = {B00100,B10101,B01110,B00100,B00000,B00000,B00000,B00000};
-    byte wait1[]                = {B00100,B00100,B00100,B10101,B01110,B00100,B00000,B00000};
-    byte wait2[]                = {B00100,B00100,B00100,B00100,B00100,B10101,B01110,B00100};
+    byte pack_man_open[]        = {B00000,B00111,B01110,B01100,B01110,B00111,B00000,B00000};
+    byte pack_man_closed[]      = {B00000,B01110,B11111,B11000,B11111,B01110,B00000,B00000};
+    byte pack_man_goast[]       = {B00000,B01110,B11111,B10101,B11111,B11111,B10101,B00000};
     byte smile[]                = {B00000,B01010,B00000,B00100,B10001,B01110,B00000,B00000};
     byte frown[]                = {B00000,B01010,B00000,B00100,B00000,B01110,B10001,B00000};
     byte skull[]                = {B00000,B01110,B10101,B11011,B01110,B01110,B00000,B00000};
     byte adaFruitConnected[]    = {B00000,B00000,B01010,B11111,B11111,B01110,B00100,B00000};
     byte adaFruitNotConnected[] = {B00000,B00000,B01010,B10101,B10001,B01010,B00100,B00000};
-    l.createChar(LCD_CUSTOM_CHAR_WAIT1, wait0);
-    l.createChar(LCD_CUSTOM_CHAR_WAIT2, wait1);
-    l.createChar(LCD_CUSTOM_CHAR_WAIT3, wait2);
+    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_OPEN, pack_man_open);
+    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_CLOSED, pack_man_closed);
+    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_GOAST, pack_man_goast);
     l.createChar(LCD_CUSTOM_CHAR_VERRY_BAD, skull);
     l.createChar(LCD_CUSTOM_CHAR_AIO_CONNECTED, adaFruitConnected);
     l.createChar(LCD_CUSTOM_CHAR_AIO_NOT_CONNECTED, adaFruitNotConnected);
@@ -44,24 +46,115 @@ void LcdDisplay::init(LiquidCrystal_I2C *lcd){
     l.createChar(LCD_CUSTOM_CHAR_ERROR, frown);
 }
 
-void LcdDisplay::start_vend(int slot, const char beer[], const char drinker[]){
+
+void LcdDisplay::display_default_status(){
+    DEBUG_PRINTLN(F("LcdDisplay::repaint: Re-Painting the LCD Screen..."));
+    clear();
+    set_wifi_status();
+    set_adafruit_status(_adafruit_status);
+    set_internal_temp(_internal_temp);
+    set_external_temp(_external_temp);
+    set_external_humidity(_external_humidity);
+    set_external_inHg(_external_inHg);
+    set_amps(_amps);
+    set_watts(_watts);
+    for (int i = 0; i < 6; i++){
+       set_slot_status(i, _slot_status[i]);
+    }
+}
+
+
+void LcdDisplay::start_vend(int slot, const char beer[]){
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
-  l.print("Vending ");
-  l.print(beer);
-  l.print(" From Slot ");
   l.print(SLOT_NAMES[slot]);
-  l.print(" For ");
-  l.print(drinker);
-  l.print(" to enjoy.");
+  l.print(": Vending a can of");
+  l.setCursor(0, 1);
+  l.print(beer);
+  l.setCursor(0, 2);
+  _slot_animation_col = 0;
 }
+
+void LcdDisplay::finish_vend(const char beer[], const char drinker[], int clear_after_delay){
+  LiquidCrystal_I2C l = *_lcd;
+  l.clear();
+  l.home();
+  l.print(drinker);
+  l.setCursor(0, 1);
+  l.print(F("Enjoy your"));
+  l.setCursor(0, 2);
+  l.print(beer);
+  l.setCursor(0, 3);
+  l.print(F("Beer Temp: "));
+  l.print(_internal_temp, 2);
+  l.print(LCD_CHAR_DEGREE);
+  delay(clear_after_delay);
+
+}
+
+void LcdDisplay::vend_animation(int delay_time){
+  /* Only animate every x times.  This allows for thread 
+  *  yealding without super fast animation 
+  */
+  if (_slot_animation_skip < 6){  
+    delay(delay_time);
+    _slot_animation_skip++;
+    return;  
+  }
+  LiquidCrystal_I2C l = *_lcd;
+
+  /* Reset the animation column to zero once we have printed
+   * all the pack man and goeast.
+   */
+  if (_slot_animation_col > 22){ _slot_animation_col = 0; }
+
+  /* If we are at the begining of the LCD for the first
+   * time or again we load the row with packman food.
+   */
+  if(_slot_animation_col == 0){
+      l.setCursor(0, 3);
+      for(int i = 0; i < 20; i++){
+      l.print(LCD_CHAR_PACK_MAN_FOOD);
+    }
+  }
+
+  /* Switch between packman chars Even = Open, Odd = Closed  */
+  int pack_man_car = ((_slot_animation_col % 2) == 0) ? LCD_CUSTOM_CHAR_PACK_MAN_OPEN : LCD_CUSTOM_CHAR_PACK_MAN_CLOSED;
+
+  /* Print a space to remove the old pack man char then print
+   * the pack man char.   We want to stop printing 
+   * as we get closer to the end of the LCD.
+   */
+  if (_slot_animation_col < 20){
+    l.setCursor(_slot_animation_col, 3);
+    l.print(" ");
+  }
+  if (_slot_animation_col < 19){
+    l.write(pack_man_car);
+  }
+
+  /* Print a pace to remvoe the old goast, then print the new goast
+   * we want to stop as we reach the endof the LCD.
+   */
+  if (_slot_animation_col > 1 && _slot_animation_col < 23){
+    l.setCursor(_slot_animation_col - 3, 3);
+    l.print(" ");
+  }
+  if (_slot_animation_col > 1 && _slot_animation_col < 22){
+    l.write(LCD_CUSTOM_CHAR_PACK_MAN_GOAST);
+  }
+
+  _slot_animation_col++;
+  _slot_animation_skip = 0;
+  delay(delay_time);
+}
+
 
 
 void LcdDisplay::disply_msg(const char msg[], int clear_after_delay){
   scrool_msg(msg, 0, clear_after_delay);
 }
-
 
 void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int clear_after_delay){
   
@@ -90,25 +183,6 @@ void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int clear_after_
 
 
 
-void LcdDisplay::display_default_status(){
-    DEBUG_PRINTLN(F("LcdDisplay::repaint: Re-Painting the LCD Screen..."));
-    clear();
-    set_wifi_status();
-    set_adafruit_status(_adafruit_status);
-    set_internal_temp(_internal_temp);
-    set_external_temp(_external_temp);
-    set_external_humidity(_external_humidity);
-    set_external_inHg(_external_inHg);
-    set_amps(_amps);
-    set_watts(_watts);
-    set_watts(_watts);
-    for (int i = 0; i < 6; i++){
-       set_slot_status(i, _slot_status[i]);
-    }
-}
-
-
-
 void LcdDisplay::set_slot_status(int slot, int slot_status){
     if (slot < 0 || slot > 5) { 
       DEBUG_PRINT(F("SLOT OUT OF RANGE!  slot: "));
@@ -132,12 +206,21 @@ void LcdDisplay::set_slot_status(int slot, int slot_status){
     
     printAt(c_slot, col, row);
     print(':');
-    if (slot_status == 0){
-        write(LCD_CUSTOM_CHAR_OK);
-    }else
-    {
-        write(LCD_CUSTOM_CHAR_VERRY_BAD);
-    }
+
+    switch (slot_status) {
+     case -1:    
+       print(" ");
+       break;
+     case 0:     
+       write(LCD_CUSTOM_CHAR_OK);
+       break;
+     case 10:     
+       write(LCD_CUSTOM_CHAR_ERROR);
+       break;
+   default:
+       write(LCD_CUSTOM_CHAR_VERRY_BAD);
+       break;
+   }
 }
 
 

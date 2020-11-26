@@ -28,7 +28,7 @@ public:
   static const int VEND_STATUS_ERROR       = 255;
 
   static const int SLOT_STATUS_OK          = 0;
-  static const int SLOT_STATUS_RUNNING_OUT = 1;
+  static const int SLOT_STATUS_RUNNING_OUT = 10;
 
 protected:
   
