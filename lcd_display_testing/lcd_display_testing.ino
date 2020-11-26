@@ -20,8 +20,13 @@ void setup(void)
   lcd.backlight();
   l_display.init(&lcd);
 
-  l_display.repaint();
+  //l_display.repaint();
   wifi_connect();
+  l_display.set_slot_status(1, 0);
+  l_display.set_slot_status(2, 0);
+  l_display.set_slot_status(3, 0);
+  l_display.set_slot_status(5, 0);
+  l_display.set_slot_status(4, 0);
 }
 
 
