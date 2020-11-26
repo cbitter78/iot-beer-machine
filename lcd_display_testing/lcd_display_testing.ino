@@ -27,6 +27,8 @@ void setup(void)
   l_display.set_slot_status(3, 0);
   l_display.set_slot_status(5, 0);
   l_display.set_slot_status(4, 0);
+  l_display.disply_msg("I love to display messages!! Becuse its lots and lots of fun!", 5000);
+  l_display.scrool_msg("The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...", 50, 5000);
 }
 
 
@@ -37,7 +39,8 @@ void loop(){
   wifi_connect();
   delay(5000);
   DEBUG_PRINTLN("Not doing much...");
-  l_display.repaint();
+  l_display.scrool_msg("The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...The quick brown fox jumpped over the lazy log...", 50, 5000);
+
 
 }
 

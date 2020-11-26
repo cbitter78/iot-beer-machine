@@ -6,22 +6,23 @@
 #include <WiFi101.h>
 #include "logging.h"
 
-#define LCD_CUSTOM_CHAR_WAIT1 0
-#define LCD_CUSTOM_CHAR_WAIT2 1
-#define LCD_CUSTOM_CHAR_WAIT3 2
-#define LCD_CUSTOM_CHAR_VERRY_BAD 3
-#define LCD_CUSTOM_CHAR_AIO_CONNECTED 4
-#define LCD_CUSTOM_CHAR_AIO_DISCONNECTED 5
-#define LCD_CUSTOM_CHAR_OK 6
-#define LCD_CUSTOM_CHAR_ERROR 7
-#define LCD_CHAR_WIFI_CONNECTED (char)B10110111
+#define LCD_CUSTOM_CHAR_WAIT1             0
+#define LCD_CUSTOM_CHAR_WAIT2             1
+#define LCD_CUSTOM_CHAR_WAIT3             2
+#define LCD_CUSTOM_CHAR_VERRY_BAD         3
+#define LCD_CUSTOM_CHAR_AIO_CONNECTED     4
+#define LCD_CUSTOM_CHAR_AIO_NOT_CONNECTED 5
+#define LCD_CUSTOM_CHAR_OK                6
+#define LCD_CUSTOM_CHAR_ERROR             7
+
+#define LCD_CHAR_WIFI_CONNECTED     (char)B10110111
 #define LCD_CHAR_WIFI_NOT_CONNECTED (char)B10110010
-#define LCD_CHAR_DEGREE (char)B11011111
-#define LCD_CHAR_OHMS (char)B11110100
+#define LCD_CHAR_DEGREE             (char)B11011111
+#define LCD_CHAR_OHMS               (char)B11110100
 
 const char SLOT_NAMES[]   = { '1', '2', '3', '4', '5', '6' };
 const int  SLOT_COLUMNS[] = {  2,   6,  10,   2,   6,   10 };
-const int  SLOT_ROWS[]    = {  0,   0,   0,   1,   1,   1 };
+const int  SLOT_ROWS[]    = {  0,   0,   0,   1,   1,   1  };
 
 
 class LcdDisplay {
@@ -49,8 +50,10 @@ public:
   void set_amps(float amps);
   void set_watts(float watts);
   void set_slot_status(int slot, int slot_status); 
-  void disply_msg(const char msg[]);
+  void disply_msg(const char msg[], int clear_after_delay);
+  void scrool_msg(const char msg[], int scroll_delay, int clear_after_delay);
   void delay_with_animation(int mills, int slot); 
+  void display_network_info();
   void repaint();
 
 

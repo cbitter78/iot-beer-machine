@@ -18,7 +18,6 @@ LcdDisplay::LcdDisplay(){
     for (int i = 0; i < 7; i++){
         _slot_status[i] = -1;
     }
-
 }
 
 
@@ -40,10 +39,43 @@ void LcdDisplay::init(LiquidCrystal_I2C *lcd){
     l.createChar(LCD_CUSTOM_CHAR_WAIT3, wait2);
     l.createChar(LCD_CUSTOM_CHAR_VERRY_BAD, skull);
     l.createChar(LCD_CUSTOM_CHAR_AIO_CONNECTED, adaFruitConnected);
-    l.createChar(LCD_CUSTOM_CHAR_AIO_DISCONNECTED, adaFruitNotConnected);
+    l.createChar(LCD_CUSTOM_CHAR_AIO_NOT_CONNECTED, adaFruitNotConnected);
     l.createChar(LCD_CUSTOM_CHAR_OK, smile);
     l.createChar(LCD_CUSTOM_CHAR_ERROR, frown);
 }
+
+
+void LcdDisplay::disply_msg(const char msg[], int clear_after_delay){
+  scrool_msg(msg, 0, clear_after_delay);
+}
+
+
+void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int clear_after_delay){
+  
+  LiquidCrystal_I2C l = *_lcd;
+  l.clear();
+  l.home();
+  for (int i = 0; i < strnlen(msg, 80); i++) {
+    switch(i) {
+     case 20 :
+        l.setCursor(0, 1);
+        break; 
+     case 40:
+        l.setCursor(0, 2);
+        break; 
+     case 60:
+        l.setCursor(0, 3);
+        break;
+    }
+    l.print(msg[i]);
+    delay(scroll_delay);
+  }
+  delay(clear_after_delay);
+  repaint();
+}
+
+
+
 
 void LcdDisplay::repaint(){
     DEBUG_PRINTLN(F("LcdDisplay::repaint: Re-Painting the LCD Screen..."));
@@ -166,7 +198,7 @@ void LcdDisplay::set_adafruit_status(bool s){
         writeAt(LCD_CUSTOM_CHAR_AIO_CONNECTED, col, row);
     }else{
         DEBUG_PRINT(F("LcdDisplay::set_adafruit_status: NOT! Connected"));
-        writeAt(LCD_CUSTOM_CHAR_AIO_DISCONNECTED, col, row);
+        writeAt(LCD_CUSTOM_CHAR_AIO_NOT_CONNECTED, col, row);
     }
 }
 

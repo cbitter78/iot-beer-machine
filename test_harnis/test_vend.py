@@ -60,5 +60,8 @@ def vend():
     r = aio.send(aio_cmd.name, payload)
     print("data sent")
 
+    
+
+
 if __name__ == "__main__":
     vend()
