@@ -36,6 +36,7 @@ public:
   void writeAt(uint8_t value, uint8_t col, uint8_t row);
   void write(uint8_t value);
   void printAt(const char c[], uint8_t col, uint8_t row);
+  void printAt(String s, uint8_t col, uint8_t row);
   void printAt(char c, uint8_t col, uint8_t row);
   void printAt(float f, int accuracy, uint8_t col, uint8_t row);
   void print(char c);
@@ -57,31 +58,34 @@ public:
   void disply_msg(String msg, int delay_then_display_default);
   void scroll_msg(const char msg[], int scroll_delay, int delay_then_display_default);
   void scroll_msg(String msg, int scroll_delay, int delay_then_display_default);
-  void delay_with_animation(int mills, int slot); 
   void display_network_info(int delay_then_display_default);
   void display_default_status();
   void start_vend(int slot, const char beer[]);
   void finish_vend(const char beer[], const char drinker[], int delay_then_display_default);
-  void vend_animation(int delay_time);
+  void delay_with_animation(int delay_time, int animation_ratio);
+  String center(const char c[]);
+  String center(String s);
+
 
 
 protected:
   LiquidCrystal_I2C *_lcd;
-  bool _adafruit_status;
+  bool  _adafruit_status;
   float _internal_temp;
   float _external_temp;
   float _external_inHg;
   float _external_humidity;
   float _amps;
   float _watts;
-  int _slot_status[6];
-  int _slot_animation_col;
-  int _slot_animation_skip;
-  void _apvPrintMacAt(int col, int row, const char prefix[], byte mac[]);
+  int  _slot_status[6];
+  int  _slot_animation_col;
+  int  _slot_animation_skip;
+
+  /* Methods */
+  void _printMacAt(int col, int row, const char prefix[], byte mac[]);
   void _abvPrintIpAt(int col, int row, const char prefix[], IPAddress ip);
   char const* _wifi_status_string(uint8_t status);
-  String _center(const char c[]);
-  String _center(String s);
+
 };
 
-#endif // LCD_DISPLAY_H
+#endif /* LCD_DISPLAY_H */ 

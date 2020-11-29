@@ -1,8 +1,8 @@
 #include "lcd_display.h"
 
 /*  
-For Character Map see https://www.sparkfun.com/datasheets/LCD/HD44780.pdf page 16.  Page 17 does not apply.
-
+  Class to manage the display for the iot beer machine.
+  For Character Map see https://www.sparkfun.com/datasheets/LCD/HD44780.pdf page 16.  Page 17 does not apply.
 */
 
 
@@ -36,14 +36,14 @@ void LcdDisplay::init(LiquidCrystal_I2C *lcd){
     byte skull[]                = {B00000,B01110,B10101,B11011,B01110,B01110,B00000,B00000};
     byte adaFruitConnected[]    = {B00000,B00000,B01010,B11111,B11111,B01110,B00100,B00000};
     byte adaFruitNotConnected[] = {B00000,B00000,B01010,B10101,B10001,B01010,B00100,B00000};
-    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_OPEN, pack_man_open);
-    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_CLOSED, pack_man_closed);
-    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_GOAST, pack_man_goast);
-    l.createChar(LCD_CUSTOM_CHAR_VERRY_BAD, skull);
-    l.createChar(LCD_CUSTOM_CHAR_AIO_CONNECTED, adaFruitConnected);
+    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_OPEN,     pack_man_open);
+    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_CLOSED,   pack_man_closed);
+    l.createChar(LCD_CUSTOM_CHAR_PACK_MAN_GOAST,    pack_man_goast);
+    l.createChar(LCD_CUSTOM_CHAR_VERRY_BAD,         skull);
+    l.createChar(LCD_CUSTOM_CHAR_AIO_CONNECTED,     adaFruitConnected);
     l.createChar(LCD_CUSTOM_CHAR_AIO_NOT_CONNECTED, adaFruitNotConnected);
-    l.createChar(LCD_CUSTOM_CHAR_OK, smile);
-    l.createChar(LCD_CUSTOM_CHAR_ERROR, frown);
+    l.createChar(LCD_CUSTOM_CHAR_OK,                smile);
+    l.createChar(LCD_CUSTOM_CHAR_ERROR,             frown);
 }
 
 
@@ -82,16 +82,16 @@ void LcdDisplay::display_network_info(int delay_then_display_default){
   printAt("dBm: ", 11, 1);
   print((int)WiFi.RSSI());
 
-  _abvPrintIpAt(0,0,  "IP: ", WiFi.localIP());
-  _abvPrintIpAt(0,1,  "NM: ", WiFi.subnetMask());
+  _abvPrintIpAt(0,0,  "IP: " , WiFi.localIP());
+  _abvPrintIpAt(0,1,  "NM: " , WiFi.subnetMask());
   _abvPrintIpAt(11,0, "GW:  ", WiFi.gatewayIP());
   
 
   byte mac[6];
   WiFi.macAddress(mac);
-  _apvPrintMacAt(0, 2, "LMAC: ", mac); /* Local Mac Address */
+  _printMacAt(0, 2, "L: ", mac); /* Local Mac Address */
   WiFi.BSSID(mac);
-  _apvPrintMacAt(0, 3, "RMAC: ", mac); /* Remote (Gateway) Mac Address */
+  _printMacAt(0, 3, "R: ", mac); /* Remote (Gateway) Mac Address */
   
   delay(delay_then_display_default);
   display_default_status();
@@ -109,11 +109,11 @@ void LcdDisplay::start_vend(int slot, const char beer[]){
   l.clear();
   l.home();
   String slot_name = String("Slot #") + String(SLOT_NAMES[slot]);
-  l.print(_center(slot_name));
+  l.print(center(slot_name));
   l.setCursor(0, 1);
-  l.print(_center("Is Vending a Can Of"));
+  l.print(center("Is Vending a Can Of"));
   l.setCursor(0, 2);
-  l.print(_center(beer));
+  l.print(center(beer));
   l.setCursor(0, 3);
   _slot_animation_col = 0;
 }
@@ -128,24 +128,24 @@ void LcdDisplay::finish_vend(const char beer[], const char drinker[], int delay_
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
-  l.print(_center(drinker));
+  l.print(center(drinker));
   l.setCursor(0, 1);
-  l.print(_center("Enjoy your"));
+  l.print(center("Enjoy your"));
   l.setCursor(0, 2);
-  l.print(_center(beer));
+  l.print(center(beer));
   l.setCursor(0, 3);
-  l.print(_center(String("Beer Temp: ") + String(_internal_temp, 2) + String(LCD_CHAR_DEGREE)));
+  l.print(center(String("Beer Temp: ") + String(_internal_temp, 2) + String(LCD_CHAR_DEGREE)));
 //  l.print(_internal_temp, 2);
 //  l.print(LCD_CHAR_DEGREE);
   delay(delay_then_display_default);
   display_default_status();
 }
 
-void LcdDisplay::vend_animation(int delay_time){
+void LcdDisplay::delay_with_animation(int delay_time, int animation_ratio){
   /* Only animate every x times.  This allows for thread 
   *  yealding without super fast animation 
   */
-  if (_slot_animation_skip < 5){  
+  if (_slot_animation_skip < animation_ratio){  
     delay(delay_time);
     _slot_animation_skip++;
     return;  
@@ -416,6 +416,19 @@ void LcdDisplay::printAt(const char c[], uint8_t col, uint8_t row){
     l.printstr(c);
 }
 
+void LcdDisplay::printAt(String s, uint8_t col, uint8_t row){
+    DEBUG_PRINT(F("LcdDisplay::printAt(s:"));
+    DEBUG_PRINT(s);
+    DEBUG_PRINT(F(", col:"));
+    DEBUG_PRINT(col);
+    DEBUG_PRINT(F(", row:"));
+    DEBUG_PRINT(row);
+    DEBUG_PRINTLN(F(")"));
+    LiquidCrystal_I2C l = *_lcd;
+    l.setCursor(col, row);
+    l.print(s);
+}
+
 
 void LcdDisplay::printAt(char c, uint8_t col, uint8_t row){
     DEBUG_PRINT(F("LcdDisplay::printAt(c:"));
@@ -461,6 +474,20 @@ void LcdDisplay::clear(){
     l.clear();
 }
 
+String LcdDisplay::center(const char c[]){
+  return center(String(c));
+}
+
+String LcdDisplay::center(String s){
+  int s_len = s.length();
+  if (s_len > 20)  { return s.substring(0, 20); } /* Truncate to fit the screen */
+  if (s_len == 19 || s_len == 20)   { return s; } /* Not much you can do with a 19 char string but return it. */
+  int prepend_len = (20 - s_len) / 2;             /* Subtract the string len from 20 then devid by 2 to get the number of spaces to prepend the string with to center it. */
+  String spaces = String("                  ");   /* 18 spaces that we can use to chop up. */
+  String prefix = spaces.substring(0, prepend_len);
+  prefix.concat(s);
+  return prefix;
+}
 
 
 
@@ -478,13 +505,13 @@ void LcdDisplay::_abvPrintIpAt(int col, int row, const char prefix[], IPAddress 
   l.print(ip[3]);
 }
 
-void LcdDisplay::_apvPrintMacAt(int col, int row, const char prefix[], byte mac[]){
+void LcdDisplay::_printMacAt(int col, int row, const char prefix[], byte mac[]){
   LiquidCrystal_I2C l = *_lcd;
   l.setCursor(col, row);
   l.print(prefix);
   
   INFO_PRINT(F("LcdDisplay::_printMacAt: MAC Address: "));
-  for (int i = 4; i >= 0; i--) {
+  for (int i = 5; i >= 0; i--) {
     if (mac[i] < 16) {
       l.print("0");
       INFO_PRINT(F("0"));
@@ -529,20 +556,4 @@ char const* LcdDisplay::_wifi_status_string(uint8_t wifi_status){
      default:
         return "UNKNOWN STATUS";
     }
-}
-
-String LcdDisplay::_center(const char c[]){
-  return _center(String(c));
-}
-
-String LcdDisplay::_center(String s){
-  int s_len = s.length();
-  if (s_len > 20)  { return s.substring(0, 20); } /* Truncate to fit the screen */
-  if (s_len == 19 || s_len == 20)   { return s; } /* Not much you can do with a 19 char string but return it. */
-  int prepend_len = (20 - s_len) / 2;             /* Subtract the string len from 20 then devid by 2 to get the number of spaces to prepend the string with to center it. */
-  String spaces = String("                  ");   /* 18 spaces that we can use to chop up. */
-  String prefix = spaces.substring(0, prepend_len);
-  prefix.concat(s);
-  return prefix;
-
 }
