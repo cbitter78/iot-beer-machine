@@ -62,7 +62,7 @@ public:
   void display_default_status();
   void start_vend(int slot, const char beer[]);
   void finish_vend(const char beer[], const char drinker[], int delay_then_display_default);
-  void delay_with_animation(int delay_time);
+  void delay_with_animation(int delay_time, int animation_ratio);
   String center(const char c[]);
   String center(String s);
 

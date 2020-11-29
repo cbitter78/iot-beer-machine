@@ -141,11 +141,11 @@ void LcdDisplay::finish_vend(const char beer[], const char drinker[], int delay_
   display_default_status();
 }
 
-void LcdDisplay::delay_with_animation(int delay_time){
+void LcdDisplay::delay_with_animation(int delay_time, int animation_ratio){
   /* Only animate every x times.  This allows for thread 
   *  yealding without super fast animation 
   */
-  if (_slot_animation_skip < 5){  
+  if (_slot_animation_skip < animation_ratio){  
     delay(delay_time);
     _slot_animation_skip++;
     return;  

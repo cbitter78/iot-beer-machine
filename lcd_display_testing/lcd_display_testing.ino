@@ -55,7 +55,7 @@ void setup(void)
 void loop(){
   flash(13);
   wifi_connect();
-  delay(500);
+  delay(1500);
   if (analogRead(0) > 100){
     vend(0);
   }
@@ -70,7 +70,7 @@ void vend(int slot){
   INFO_PRINTLN(slot);
   l_display.start_vend(slot, "Ballast Point Sculpin IPA");
   for(int i = 0; i < 250; i++){
-    l_display.delay_with_animation(50);  
+    l_display.delay_with_animation(50, 5);  
   }
   l_display.finish_vend("Ballast Point Sculpin IPA", "Charles", 4000);
   l_display.display_default_status();
@@ -88,6 +88,7 @@ void wifi_connect(){
   while (WiFi.status() != WL_CONNECTED) {
     DEBUG_PRINT(F("Attempting to connect to SSID: "));
     DEBUG_PRINTLN(WIFI_SSID);
+    l_display.clear();
     l_display.printAt(l_display.center("Connecting To:"), 0, 0);
     l_display.printAt(l_display.center(WIFI_SSID), 0, 1);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -96,10 +97,11 @@ void wifi_connect(){
     uint8_t timeout = 10;
     while (timeout && (WiFi.status() != WL_CONNECTED)) {
       timeout--;
-      delay(1000);
-      flash(13);
-      l_display.print('.');
+      for (int i = 0; i < 4; i++){
+        l_display.delay_with_animation(250, 1);
+      }
     }
+    
     l_display.scroll_msg("Wifi Connected", 100, -1);
     delay(1000);
     l_display.display_network_info(3000);
