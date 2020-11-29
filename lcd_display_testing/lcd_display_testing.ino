@@ -21,6 +21,9 @@ void setup(void)
   l_display.init(&lcd);
 
   wifi_connect();
+
+
+  
   int d = 200;
   l_display.display_default_status();
   l_display.set_wifi_status();
@@ -51,7 +54,7 @@ void setup(void)
 
 void loop(){
   flash(13);
-  //wifi_connect();
+  wifi_connect();
   delay(500);
   if (analogRead(0) > 100){
     vend(0);
@@ -96,10 +99,10 @@ void wifi_connect(){
       flash(13);
       l_display.print('.');
     }
+    l_display.scroll_msg("Wifi Connected", 100, -1);
+    delay(1000);
+    l_display.display_network_info(3000);
   }
-  l_display.scroll_msg("Wifi Connected", 100, -1);
-  delay(1000);
   l_display.set_wifi_status();
   l_display.set_adafruit_status(true);
-  l_display.display_network_info(3000);
 }
