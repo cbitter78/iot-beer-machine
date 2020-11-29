@@ -70,7 +70,7 @@ void vend(int slot){
   INFO_PRINTLN(slot);
   l_display.start_vend(slot, "Ballast Point Sculpin IPA");
   for(int i = 0; i < 250; i++){
-    l_display.vend_animation(50);  
+    l_display.delay_with_animation(50);  
   }
   l_display.finish_vend("Ballast Point Sculpin IPA", "Charles", 4000);
   l_display.display_default_status();
@@ -88,7 +88,8 @@ void wifi_connect(){
   while (WiFi.status() != WL_CONNECTED) {
     DEBUG_PRINT(F("Attempting to connect to SSID: "));
     DEBUG_PRINTLN(WIFI_SSID);
-    l_display.scroll_msg(String(" Connecting to SSID    ") + String(WIFI_SSID), 100, -1);
+    l_display.printAt(l_display.center("Connecting To:"), 0, 0);
+    l_display.printAt(l_display.center(WIFI_SSID), 0, 1);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
   
     // wait 10 seconds for connection:
