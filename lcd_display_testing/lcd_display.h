@@ -39,6 +39,7 @@ public:
   void printAt(char c, uint8_t col, uint8_t row);
   void printAt(float f, int accuracy, uint8_t col, uint8_t row);
   void print(char c);
+  void print(int i);
   void print(const char c[]);
   void clear();
   void reset();
@@ -51,13 +52,13 @@ public:
   void set_amps(float amps);
   void set_watts(float watts);
   void set_slot_status(int slot, int slot_status); 
-  void disply_msg(const char msg[], int clear_after_delay);
-  void scrool_msg(const char msg[], int scroll_delay, int clear_after_delay);
+  void disply_msg(const char msg[], int delay_then_display_default);
+  void scrool_msg(const char msg[], int scroll_delay, int delay_then_display_default);
   void delay_with_animation(int mills, int slot); 
-  void display_network_info();
+  void display_network_info(int delay_then_display_default);
   void display_default_status();
   void start_vend(int slot, const char beer[]);
-  void finish_vend(const char beer[], const char drinker[], int clear_after_delay);
+  void finish_vend(const char beer[], const char drinker[], int delay_then_display_default);
   void vend_animation(int delay_time);
 
 
@@ -73,6 +74,9 @@ protected:
   int _slot_status[6];
   int _slot_animation_col;
   int _slot_animation_skip;
+  void _apvPrintMacAt(int col, int row, const char prefix[], byte mac[]);
+  void _abvPrintIpAt(int col, int row, const char prefix[], IPAddress ip);
+  char const* _wifi_status_string(uint8_t status);
 };
 
 #endif // LCD_DISPLAY_H

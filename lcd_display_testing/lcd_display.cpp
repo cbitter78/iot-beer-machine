@@ -64,7 +64,47 @@ void LcdDisplay::display_default_status(){
 }
 
 
+void LcdDisplay::display_network_info(int delay_then_display_default){
+  DEBUG_PRINTLN(F("LcdDisplay::display_network_info:"));
+  clear();
+
+  if (WiFi.status() != WL_CONNECTED){
+    printAt("WIFI Disconnected", 0, 0);
+    printAt("Status:", 0, 2);
+    printAt(_wifi_status_string(WiFi.status()), 1,3); 
+    print(":");
+    print(WiFi.status());   
+    delay(delay_then_display_default);
+    display_default_status();
+    return;
+  }
+  
+  printAt("dBm: ", 11, 1);
+  print((int)WiFi.RSSI());
+
+  _abvPrintIpAt(0,0,  "IP: ", WiFi.localIP());
+  _abvPrintIpAt(0,1,  "NM: ", WiFi.subnetMask());
+  _abvPrintIpAt(11,0, "GW:  ", WiFi.gatewayIP());
+  
+
+  byte mac[6];
+  WiFi.macAddress(mac);
+  _apvPrintMacAt(0, 2, "LMAC: ", mac); /* Local Mac Address */
+  WiFi.BSSID(mac);
+  _apvPrintMacAt(0, 3, "RMAC: ", mac); /* Remote (Gateway) Mac Address */
+  
+  delay(delay_then_display_default);
+  display_default_status();
+}
+
+
 void LcdDisplay::start_vend(int slot, const char beer[]){
+  DEBUG_PRINT(F("LcdDisplay::start_vend:("));
+  DEBUG_PRINT(F("slot: "));
+  DEBUG_PRINT(slot);
+  DEBUG_PRINT(F(", beer: "));
+  DEBUG_PRINT(beer);
+  DEBUG_PRINTLN(F(")"));
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
@@ -76,7 +116,13 @@ void LcdDisplay::start_vend(int slot, const char beer[]){
   _slot_animation_col = 0;
 }
 
-void LcdDisplay::finish_vend(const char beer[], const char drinker[], int clear_after_delay){
+void LcdDisplay::finish_vend(const char beer[], const char drinker[], int delay_then_display_default){
+  DEBUG_PRINT(F("LcdDisplay::finish_vend:("));
+  DEBUG_PRINT(F("beer: "));
+  DEBUG_PRINT(beer);
+  DEBUG_PRINT(F(", drinker: "));
+  DEBUG_PRINT(drinker);
+  DEBUG_PRINTLN(F(")"));
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
@@ -89,15 +135,15 @@ void LcdDisplay::finish_vend(const char beer[], const char drinker[], int clear_
   l.print(F("Beer Temp: "));
   l.print(_internal_temp, 2);
   l.print(LCD_CHAR_DEGREE);
-  delay(clear_after_delay);
-
+  delay(delay_then_display_default);
+  display_default_status();
 }
 
 void LcdDisplay::vend_animation(int delay_time){
   /* Only animate every x times.  This allows for thread 
   *  yealding without super fast animation 
   */
-  if (_slot_animation_skip < 6){  
+  if (_slot_animation_skip < 5){  
     delay(delay_time);
     _slot_animation_skip++;
     return;  
@@ -152,12 +198,21 @@ void LcdDisplay::vend_animation(int delay_time){
 
 
 
-void LcdDisplay::disply_msg(const char msg[], int clear_after_delay){
-  scrool_msg(msg, 0, clear_after_delay);
+void LcdDisplay::disply_msg(const char msg[], int delay_then_display_default){
+  DEBUG_PRINT(F("LcdDisplay::disply_msg:("));
+  DEBUG_PRINT(F("msg: "));
+  DEBUG_PRINT(msg);
+  DEBUG_PRINTLN(F(")"));
+  scrool_msg(msg, 0, delay_then_display_default);
 }
 
-void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int clear_after_delay){
-  
+void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int delay_then_display_default){
+  DEBUG_PRINT(F("LcdDisplay::scrool_msg:("));
+  DEBUG_PRINT(F("msg: "));
+  DEBUG_PRINT(msg);
+  DEBUG_PRINT(F(", scroll_delay: "));
+  DEBUG_PRINT(scroll_delay);
+  DEBUG_PRINTLN(F(")"));
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
@@ -176,7 +231,7 @@ void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int clear_after_
     l.print(msg[i]);
     if (scroll_delay > 0) { delay(scroll_delay); }
   }
-  delay(clear_after_delay);
+  delay(delay_then_display_default);
   display_default_status();
 }
 
@@ -378,8 +433,84 @@ void LcdDisplay::print(const char c[]){
     l.print(c);
 }
 
+void LcdDisplay::print(int i){
+    LiquidCrystal_I2C l = *_lcd;
+    l.print(i);
+}
+
+
 void LcdDisplay::clear(){
     DEBUG_PRINTLN("LcdDisplay::clear()");
     LiquidCrystal_I2C l = *_lcd;
     l.clear();
+}
+
+
+
+
+void LcdDisplay::_abvPrintIpAt(int col, int row, const char prefix[], IPAddress ip){
+  INFO_PRINT(F("LcdDisplay::_abvPrintIpAt:"));
+  INFO_PRINT(prefix);
+  INFO_PRINT(F(" "));
+  INFO_PRINTLN(ip);
+  
+  LiquidCrystal_I2C l = *_lcd;
+  l.setCursor(col, row);
+  l.print(prefix); 
+  l.print(ip[2]);
+  l.print(".");
+  l.print(ip[3]);
+}
+
+void LcdDisplay::_apvPrintMacAt(int col, int row, const char prefix[], byte mac[]){
+  LiquidCrystal_I2C l = *_lcd;
+  l.setCursor(col, row);
+  l.print(prefix);
+  
+  INFO_PRINT(F("LcdDisplay::_printMacAt: MAC Address: "));
+  for (int i = 4; i >= 0; i--) {
+    if (mac[i] < 16) {
+      l.print("0");
+      INFO_PRINT("0");
+    }
+    l.print(mac[i], HEX);
+    INFO_PRINT(mac[i], HEX);
+    if (i > 0) {
+      l.print(":");
+      INFO_PRINT(":");
+    } 
+  }
+  INFO_PRINTLN();
+}
+
+char const* LcdDisplay::_wifi_status_string(uint8_t wifi_status){
+
+  switch(wifi_status) {
+     case 255 :
+        return "NO SHIELD";
+     case 0 :
+        return "IDLE STATUS";
+     case 1 :
+        return "NO SSID AVAIL";
+     case 2 :
+        return "SCAN COMPLETED";
+     case 3 :
+        return "CONNECTED";
+     case 4 :
+        return "CONNECT FAILED";
+     case 5 :
+        return "CONNECTION LOST";
+     case 6 :
+        return "AP LISTENING";
+     case 7 :
+        return "AP CONNECTED";
+     case 8 :
+        return "AP FAILED";
+     case 9 :
+        return "PROVISIONING";
+     case 10 :
+        return "PROVISIONING FAILED";
+     default:
+        return "UNKNOWN STATUS";
+    }
 }
