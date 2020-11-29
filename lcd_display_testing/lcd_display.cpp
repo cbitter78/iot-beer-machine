@@ -72,7 +72,7 @@ void LcdDisplay::display_network_info(int delay_then_display_default){
     printAt("WIFI Disconnected", 0, 0);
     printAt("Status:", 0, 2);
     printAt(_wifi_status_string(WiFi.status()), 1,3); 
-    print(":");
+    print(F(":"));
     print(WiFi.status());   
     delay(delay_then_display_default);
     display_default_status();
@@ -108,11 +108,13 @@ void LcdDisplay::start_vend(int slot, const char beer[]){
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
-  l.print(SLOT_NAMES[slot]);
-  l.print(": Vending a can of");
+  String slot_name = String("Slot #") + String(SLOT_NAMES[slot]);
+  l.print(_center(slot_name));
   l.setCursor(0, 1);
-  l.print(beer);
+  l.print(_center("Is Vending a Can Of"));
   l.setCursor(0, 2);
+  l.print(_center(beer));
+  l.setCursor(0, 3);
   _slot_animation_col = 0;
 }
 
@@ -126,15 +128,15 @@ void LcdDisplay::finish_vend(const char beer[], const char drinker[], int delay_
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
-  l.print(drinker);
+  l.print(_center(drinker));
   l.setCursor(0, 1);
-  l.print(F("Enjoy your"));
+  l.print(_center("Enjoy your"));
   l.setCursor(0, 2);
-  l.print(beer);
+  l.print(_center(beer));
   l.setCursor(0, 3);
-  l.print(F("Beer Temp: "));
-  l.print(_internal_temp, 2);
-  l.print(LCD_CHAR_DEGREE);
+  l.print(_center(String("Beer Temp: ") + String(_internal_temp, 2) + String(LCD_CHAR_DEGREE)));
+//  l.print(_internal_temp, 2);
+//  l.print(LCD_CHAR_DEGREE);
   delay(delay_then_display_default);
   display_default_status();
 }
@@ -199,24 +201,32 @@ void LcdDisplay::vend_animation(int delay_time){
 
 
 void LcdDisplay::disply_msg(const char msg[], int delay_then_display_default){
-  DEBUG_PRINT(F("LcdDisplay::disply_msg:("));
-  DEBUG_PRINT(F("msg: "));
-  DEBUG_PRINT(msg);
-  DEBUG_PRINTLN(F(")"));
-  scrool_msg(msg, 0, delay_then_display_default);
+  scroll_msg(msg, 0, delay_then_display_default);
 }
 
-void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int delay_then_display_default){
+void LcdDisplay::disply_msg(String msg, int delay_then_display_default){
+  scroll_msg(msg, 0, delay_then_display_default);
+}
+
+void LcdDisplay::scroll_msg(const char msg[], int scroll_delay, int delay_then_display_default){
+  return scroll_msg(String(msg), scroll_delay, delay_then_display_default);
+}
+
+void LcdDisplay::scroll_msg(String msg, int scroll_delay, int delay_then_display_default){
   DEBUG_PRINT(F("LcdDisplay::scrool_msg:("));
   DEBUG_PRINT(F("msg: "));
   DEBUG_PRINT(msg);
   DEBUG_PRINT(F(", scroll_delay: "));
   DEBUG_PRINT(scroll_delay);
   DEBUG_PRINTLN(F(")"));
+
+
   LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
-  for (int i = 0; i < strnlen(msg, 80); i++) {
+
+  int str_len = (msg.length() > 80) ? 80 : msg.length();
+  for (int i = 0; i < str_len; i++) {
     switch(i) {
      case 20 :
         l.setCursor(0, 1);
@@ -231,11 +241,13 @@ void LcdDisplay::scrool_msg(const char msg[], int scroll_delay, int delay_then_d
     l.print(msg[i]);
     if (scroll_delay > 0) { delay(scroll_delay); }
   }
-  delay(delay_then_display_default);
-  display_default_status();
+
+  if (delay_then_display_default >= 0) {
+    delay(delay_then_display_default);
+    display_default_status();
+  }
+  
 }
-
-
 
 
 void LcdDisplay::set_slot_status(int slot, int slot_status){
@@ -354,51 +366,51 @@ void LcdDisplay::set_adafruit_status(bool s){
 }
 
 void LcdDisplay::backlight_on(){
-    DEBUG_PRINTLN("LcdDisplay::backlight_on()");
+    DEBUG_PRINTLN(F("LcdDisplay::backlight_on()"));
     LiquidCrystal_I2C l = *_lcd;
     l.backlight();
 }
 
 void LcdDisplay::backlight_off(){
-    DEBUG_PRINTLN("LcdDisplay::backlight_off()");
+    DEBUG_PRINTLN(F("LcdDisplay::backlight_off()"));
     LiquidCrystal_I2C l = *_lcd;
     l.noBacklight();
 }
 
 void LcdDisplay::writeAt(uint8_t v, uint8_t col, uint8_t row){
-    DEBUG_PRINT("LcdDisplay::writeAt(v:");
+    DEBUG_PRINT(F("LcdDisplay::writeAt(v:"));
     DEBUG_PRINT(v);
-    DEBUG_PRINT(", col:");
+    DEBUG_PRINT(F(", col:"));
     DEBUG_PRINT(col);
-    DEBUG_PRINT(", row:");
+    DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
-    DEBUG_PRINTLN(")");
+    DEBUG_PRINTLN(F(")"));
     LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.write(v);
 }
 
 void LcdDisplay::printAt(float f, int accuracy, uint8_t col, uint8_t row){
-    DEBUG_PRINT("LcdDisplay::printAt(f:");
+    DEBUG_PRINT(F("LcdDisplay::printAt(f:"));
     DEBUG_PRINT(f, accuracy);
-    DEBUG_PRINT(", col:");
+    DEBUG_PRINT(F(", col:"));
     DEBUG_PRINT(col);
-    DEBUG_PRINT(", row:");
+    DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
-    DEBUG_PRINTLN(")");
+    DEBUG_PRINTLN(F(")"));
     LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.print(f, accuracy);
 }
 
 void LcdDisplay::printAt(const char c[], uint8_t col, uint8_t row){
-    DEBUG_PRINT("LcdDisplay::printAt(c:");
+    DEBUG_PRINT(F("LcdDisplay::printAt(c:"));
     DEBUG_PRINT(c);
-    DEBUG_PRINT(", col:");
+    DEBUG_PRINT(F(", col:"));
     DEBUG_PRINT(col);
-    DEBUG_PRINT(", row:");
+    DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
-    DEBUG_PRINTLN(")");
+    DEBUG_PRINTLN(F(")"));
     LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.printstr(c);
@@ -406,13 +418,13 @@ void LcdDisplay::printAt(const char c[], uint8_t col, uint8_t row){
 
 
 void LcdDisplay::printAt(char c, uint8_t col, uint8_t row){
-    DEBUG_PRINT("LcdDisplay::printAt(c:");
+    DEBUG_PRINT(F("LcdDisplay::printAt(c:"));
     DEBUG_PRINT(c);
-    DEBUG_PRINT(", col:");
+    DEBUG_PRINT(F(", col:"));
     DEBUG_PRINT(col);
-    DEBUG_PRINT(", row:");
+    DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
-    DEBUG_PRINTLN(")");
+    DEBUG_PRINTLN(F(")"));
     LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.print(c);
@@ -438,9 +450,13 @@ void LcdDisplay::print(int i){
     l.print(i);
 }
 
+void LcdDisplay::print(String s){
+    LiquidCrystal_I2C l = *_lcd;
+    l.print(s);
+}
 
 void LcdDisplay::clear(){
-    DEBUG_PRINTLN("LcdDisplay::clear()");
+    DEBUG_PRINTLN(F("LcdDisplay::clear()"));
     LiquidCrystal_I2C l = *_lcd;
     l.clear();
 }
@@ -471,13 +487,13 @@ void LcdDisplay::_apvPrintMacAt(int col, int row, const char prefix[], byte mac[
   for (int i = 4; i >= 0; i--) {
     if (mac[i] < 16) {
       l.print("0");
-      INFO_PRINT("0");
+      INFO_PRINT(F("0"));
     }
     l.print(mac[i], HEX);
     INFO_PRINT(mac[i], HEX);
     if (i > 0) {
       l.print(":");
-      INFO_PRINT(":");
+      INFO_PRINT(F(":"));
     } 
   }
   INFO_PRINTLN();
@@ -513,4 +529,20 @@ char const* LcdDisplay::_wifi_status_string(uint8_t wifi_status){
      default:
         return "UNKNOWN STATUS";
     }
+}
+
+String LcdDisplay::_center(const char c[]){
+  return _center(String(c));
+}
+
+String LcdDisplay::_center(String s){
+  int s_len = s.length();
+  if (s_len > 20)  { return s.substring(0, 20); } /* Truncate to fit the screen */
+  if (s_len == 19 || s_len == 20)   { return s; } /* Not much you can do with a 19 char string but return it. */
+  int prepend_len = (20 - s_len) / 2;             /* Subtract the string len from 20 then devid by 2 to get the number of spaces to prepend the string with to center it. */
+  String spaces = String("                  ");   /* 18 spaces that we can use to chop up. */
+  String prefix = spaces.substring(0, prepend_len);
+  prefix.concat(s);
+  return prefix;
+
 }

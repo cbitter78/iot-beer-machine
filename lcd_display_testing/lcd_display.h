@@ -41,6 +41,7 @@ public:
   void print(char c);
   void print(int i);
   void print(const char c[]);
+  void print(String);
   void clear();
   void reset();
   void set_wifi_status();
@@ -53,7 +54,9 @@ public:
   void set_watts(float watts);
   void set_slot_status(int slot, int slot_status); 
   void disply_msg(const char msg[], int delay_then_display_default);
-  void scrool_msg(const char msg[], int scroll_delay, int delay_then_display_default);
+  void disply_msg(String msg, int delay_then_display_default);
+  void scroll_msg(const char msg[], int scroll_delay, int delay_then_display_default);
+  void scroll_msg(String msg, int scroll_delay, int delay_then_display_default);
   void delay_with_animation(int mills, int slot); 
   void display_network_info(int delay_then_display_default);
   void display_default_status();
@@ -77,6 +80,8 @@ protected:
   void _apvPrintMacAt(int col, int row, const char prefix[], byte mac[]);
   void _abvPrintIpAt(int col, int row, const char prefix[], IPAddress ip);
   char const* _wifi_status_string(uint8_t status);
+  String _center(const char c[]);
+  String _center(String s);
 };
 
 #endif // LCD_DISPLAY_H

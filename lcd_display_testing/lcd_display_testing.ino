@@ -65,11 +65,11 @@ void loop(){
 void vend(int slot){
   INFO_PRINT(F("Vending Slot "));
   INFO_PRINTLN(slot);
-  l_display.start_vend(slot, "Guiness");
-  for(int i = 0; i < 400; i++){
+  l_display.start_vend(slot, "Ballast Point Sculpin IPA");
+  for(int i = 0; i < 250; i++){
     l_display.vend_animation(50);  
   }
-  l_display.finish_vend("Guiness", "Charles", 4000);
+  l_display.finish_vend("Ballast Point Sculpin IPA", "Charles", 4000);
   l_display.display_default_status();
 }
 
@@ -85,6 +85,7 @@ void wifi_connect(){
   while (WiFi.status() != WL_CONNECTED) {
     DEBUG_PRINT(F("Attempting to connect to SSID: "));
     DEBUG_PRINTLN(WIFI_SSID);
+    l_display.scroll_msg(String(" Connecting to SSID    ") + String(WIFI_SSID), 100, -1);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
   
     // wait 10 seconds for connection:
@@ -92,8 +93,13 @@ void wifi_connect(){
     while (timeout && (WiFi.status() != WL_CONNECTED)) {
       timeout--;
       delay(1000);
+      flash(13);
+      l_display.print('.');
     }
   }
+  l_display.scroll_msg("Wifi Connected", 100, -1);
+  delay(1000);
   l_display.set_wifi_status();
   l_display.set_adafruit_status(true);
+  l_display.display_network_info(3000);
 }
