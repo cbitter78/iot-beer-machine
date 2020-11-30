@@ -10,7 +10,7 @@ HoldOn h2(1085,  hold_on_two);
 
 void setup() {
   Serial.begin(115200);
-  pinMode(13, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
   delay(5000);
 }
 
@@ -23,18 +23,15 @@ void hold_on_two(){
 }
 
 void loop() {
-  for (int i =0; i < 900; i ++){
-    h1.ReadyYet();
-
-    h2.ReadyYet();
-    flash(13);
-  }
-
+  h1.ReadyYet();
+  h2.ReadyYet();
+  flash();
 }
 
 
-void flash(int pin){
-  digitalWrite(pin, HIGH);
-  delay(250);
-  digitalWrite(pin, LOW);
+void flash(){
+  digitalWrite(LED_BUILTIN, HIGH); 
+  delay(500);                     
+  digitalWrite(LED_BUILTIN, LOW);  
+  delay(500);                       
 }
