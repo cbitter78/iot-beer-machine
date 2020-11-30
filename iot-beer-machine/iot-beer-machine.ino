@@ -1,17 +1,16 @@
 #include <Adafruit_ADS1015.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>                
-#include <Adafruit_BME280.h>
+
 #include <ArduinoJson.h>         /* https://arduinojson.org/v6/assistant */
-#include <DallasTemperature.h>
+
 #include <LiquidCrystal_I2C.h>
-#include <OneWire.h>
+
 #include <WiFi101.h>
-#include <Wire.h>
-#include <SPI.h>
+
 
 #include "VendSlot.h"
-#include "yhdc.h"
+
 #include "secrets.h"
 #include "logging.h"
 #include "lcd_display.h"
