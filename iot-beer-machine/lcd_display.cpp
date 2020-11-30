@@ -1,4 +1,6 @@
 #include "lcd_display.h"
+#include "logging.h"
+#include <WiFi101.h>
 
 /*  
   Class to manage the display for the iot beer machine.
@@ -135,8 +137,6 @@ void LcdDisplay::finish_vend(const char beer[], const char drinker[], int delay_
   l.print(center(beer));
   l.setCursor(0, 3);
   l.print(center(String("Beer Temp: ") + String(_internal_temp, 2) + String(LCD_CHAR_DEGREE)));
-//  l.print(_internal_temp, 2);
-//  l.print(LCD_CHAR_DEGREE);
   delay(delay_then_display_default);
   display_default_status();
 }
@@ -275,13 +275,13 @@ void LcdDisplay::set_slot_status(int slot, int slot_status){
     print(':');
 
     switch (slot_status) {
-     case -1:    
+     case -1:    /* SLOT_STATUS_NOT_SET_UP */
        print(" ");
        break;
-     case 0:     
+     case 0:     /* SLOT_STATUS_OK */
        write(LCD_CUSTOM_CHAR_OK);
        break;
-     case 10:     
+     case 10:     /* SLOT_STATUS_RUNNING_OUT */
        write(LCD_CUSTOM_CHAR_ERROR);
        break;
    default:

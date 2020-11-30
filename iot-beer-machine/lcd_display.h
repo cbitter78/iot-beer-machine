@@ -1,10 +1,9 @@
 #ifndef LCD_DISPLAY_H
 #define LCD_DISPLAY_H
 
-#include <LiquidCrystal_I2C.h>
-#include <Wire.h>
 #include <WiFi101.h>
-#include "logging.h"
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
 #define LCD_CUSTOM_CHAR_PACK_MAN_OPEN     0
 #define LCD_CUSTOM_CHAR_PACK_MAN_CLOSED   1
@@ -24,7 +23,6 @@
 const char SLOT_NAMES[]   = { '1', '2', '3', '4', '5', '6' };
 const int  SLOT_COLUMNS[] = {  2,   6,  10,   2,   6,   10 };
 const int  SLOT_ROWS[]    = {  0,   0,   0,   1,   1,   1  };
-
 
 class LcdDisplay {
 
@@ -85,7 +83,6 @@ protected:
   void _printMacAt(int col, int row, const char prefix[], byte mac[]);
   void _abvPrintIpAt(int col, int row, const char prefix[], IPAddress ip);
   char const* _wifi_status_string(uint8_t status);
-
 };
 
 #endif /* LCD_DISPLAY_H */ 

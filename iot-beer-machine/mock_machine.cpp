@@ -1,4 +1,4 @@
-#define MOCK_MACHINE
+//#define MOCK_MACHINE
 
 #ifdef MOCK_MACHINE
 
@@ -53,8 +53,10 @@ file when deploying to the actual beer machine.
 #define SLOT_5_EMPTY_ADC_PIN 2
 #define SLOT_6_EMPTY_ADC_PIN 3
 
-Machine::Machine(DallasTemperature *internalTempSensor, Adafruit_BME280 *bme){
-    _machine_name = "Mock";
+
+Machine::Machine(){
+    _machine_name = "Mock test rig";
+    _BMEStatus = false; 
 }
 
 void Machine::init(){
@@ -92,6 +94,5 @@ String Machine::name()
     DEBUG_PRINTLN(_machine_name);
     return _machine_name;  
 }
-
 
 #endif

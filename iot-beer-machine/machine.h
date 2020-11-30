@@ -3,7 +3,7 @@
 
 #include <Adafruit_BME280.h>
 #include <DallasTemperature.h>
-
+#include "VendSlot.h"
 
 struct internalSensorData {
     float CelciusTemp;
@@ -26,16 +26,21 @@ struct powerSensorData {
 class Machine {
 
 public:
-  Machine(DallasTemperature *internalTempSensor, Adafruit_BME280 *bme);
+  Machine(LcdDisplay *lcd_display);
   void init();
   internalSensorData read_internal();
   externalSensorData read_external();  
   powerSensorData read_power_usage();
+  static const int SLOT_COUNT = 6;
+  VendSlot* slots[SLOT_COUNT];
   String name();
+  
 
 protected:
   DallasTemperature *_internalTempSensor;  
   Adafruit_BME280 *_externalBMESensor;  
+  bool _BMEStatus;
   String _machine_name;
+  LcdDisplay *_display;
 };
 #endif /* MACHINE_H */ 
