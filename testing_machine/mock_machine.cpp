@@ -1,23 +1,11 @@
+#define MOCK_MACHINE
 
-
-#ifndef MACHINE
+#ifdef MOCK_MACHINE
 
 #include "machine.h"
-
-
-
+#include "logging.h"
 
 /*
- * This file holds values that are unique to a beer machine wireing.
- * This abstraction is needed to support a test harness which may
- * be wired differently than the actual beer machine.
- */
-#include <Adafruit_BME280.h>
-#include <DallasTemperature.h>
-
-
-/*
-
 This file holds values that are unique to a beer machine wireing.
 This abstraction is needed to support a test harness which may
 be wired differently than the actual beer machine.
@@ -64,5 +52,46 @@ file when deploying to the actual beer machine.
 #define SLOT_4_EMPTY_ADC_PIN 3
 #define SLOT_5_EMPTY_ADC_PIN 2
 #define SLOT_6_EMPTY_ADC_PIN 3
+
+Machine::Machine(DallasTemperature *internalTempSensor, Adafruit_BME280 *bme){
+    _machine_name = "Mock";
+}
+
+void Machine::init(){
+    DEBUG_PRINTLN("MockMachine::init");
+}
+
+internalSensorData Machine::read_internal(){
+    DEBUG_PRINTLN(F("MockMachine::read_internal"));
+    return {
+        0.856F,        /* Celcius         */
+        33.45774F,     /* Fahrenhite      */
+    };
+}
+externalSensorData Machine::read_external(){
+    DEBUG_PRINTLN(F("MockMachine::read_external"));
+    return {
+        22.54944F,      /* Celcius         */
+        72.589F,        /* Fahrenhite      */
+        81.7372050F,    /* Presure in hPa  */
+        32.81447F,      /* Presure in inHG */
+        95.17544F       /* Humidity        */
+    };
+
+}  
+powerSensorData Machine::read_power_usage(){
+    DEBUG_PRINTLN(F("MockMachine::read_power_usage"));
+    return {
+        4.25218F,       /* Amps            */
+        467.73908F,     /* Watts           */
+    };
+}
+String Machine::name()
+{
+    DEBUG_PRINT(F("MockMachine::name:"));
+    DEBUG_PRINTLN(_machine_name);
+    return _machine_name;  
+}
+
 
 #endif
