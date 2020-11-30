@@ -17,7 +17,7 @@ VendSlot::VendSlot(){
 void VendSlot::setup(int slot_number, int relay_pin, 
                     Adafruit_ADS1115 *vend_adc, int vend_adc_pin, 
                     Adafruit_ADS1115 *slot_low_adc, int slot_low_adc_pin, 
-                    LiquidCrystal_I2C *lcd, int lcd_row, int lcd_column){
+                    LcdDisplay *lcd_display){
 
     _slot_number      = slot_number;
     _relay_pin        = relay_pin;
@@ -25,15 +25,8 @@ void VendSlot::setup(int slot_number, int relay_pin,
     _vend_adc_pin     = vend_adc_pin;
     _slot_low_adc     = slot_low_adc;
     _slot_low_adc_pin = slot_low_adc_pin;
-    _lcd              = lcd;
-    _lcd_row          = lcd_row;
-    _lcd_column       = lcd_column;
-
-    _clear_dispaly();
-    //digitalWrite(_relay_pin, HIGH);
+    _lcd_display      = lcd_display
     pinMode(_relay_pin, INPUT_PULLUP);
-    
-
     reset();
     slot_status();
 }
@@ -58,12 +51,6 @@ int VendSlot::slot_status(){
 }
 
     
-int VendSlot::vend_status(){ 
-  return _vend_status; 
-  // TODO:  Set LED Slot Status
-}
-
-
 
 int VendSlot::vend(){
     INFO_PRINT("Vending Slot: ");
@@ -97,25 +84,10 @@ int VendSlot::vend(){
 }
 
 
-void VendSlot:: _delay_with_animation(int mills){
-    LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(_lcd_column + 2, _lcd_row);
-    l.write(_current_char);
-    delay(mills);
-    _current_char = (_current_char == 2) ? 0 : _current_char + 1;
-}
 
 
 
- void VendSlot::_moter_on(){
-   INFO_PRINTLN(F("Turning moter on"));
-   digitalWrite(_relay_pin, LOW);
- }
 
- void VendSlot::_moter_off(){
-   INFO_PRINTLN(F("Turning moter off"));
-   digitalWrite(_relay_pin, HIGH);
- }
 
  void VendSlot::_set_vend_status(int s){
    _vend_status = s;
@@ -138,7 +110,17 @@ void VendSlot:: _delay_with_animation(int mills){
        break;
    }
  }
- 
+
+void VendSlot::_moter_on(){
+   INFO_PRINTLN(F("Turning moter on"));
+   digitalWrite(_relay_pin, LOW);
+}
+
+void VendSlot::_moter_off(){
+   INFO_PRINTLN(F("Turning moter off"));
+   digitalWrite(_relay_pin, HIGH);
+}
+
  bool VendSlot::_is_vending_done(){
    uint16_t v = _read_adc(_vend_adc, _vend_adc_pin);
    DEBUG_PRINT("VENDING ADC READ: ");
@@ -149,32 +131,10 @@ void VendSlot:: _delay_with_animation(int mills){
    else{
      return true;   // When there is no voltagge (circut open) then vending is done.  
    }
- }
-
+}
 
  uint16_t VendSlot::_read_adc(Adafruit_ADS1015 *adc, int pin){
     uint16_t v = (*adc).readADC_SingleEnded(pin);
     if (v == 65535){ v = 0; }
     return v;
-  }
-
- void VendSlot::_lcd_display(char* msg){
-    LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(_lcd_column, _lcd_row);
-    l.print(String(_slot_number) + ":");
-    l.print(msg);
- }
-
-
- void VendSlot::_lcd_display(int customChar){
-    LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(_lcd_column, _lcd_row);
-    l.print(String(_slot_number) + ":");
-    l.write(customChar);
- }
- 
- void VendSlot::_clear_dispaly(){
-    LiquidCrystal_I2C l = *_lcd;
-    l.setCursor(_lcd_column, _lcd_row);
-    l.print(F("          ")); 
- }
+}

@@ -13,16 +13,15 @@
 #include "VendSlot.h"
 #include "yhdc.h"
 #include "util.h"
-#include "lcd_art.h"
 #include "secrets.h"
 #include "logging.h"
+#include "lcd_display.h"
 
 Adafruit_BME280 bme;
 
 
-
-//#include "mock_machine.h"  /* Only used when testing. */
-#include "machine.h"      /* Used for beer machine. */
+#include "mock_machine.h"  /* Only used when testing. */
+//#include "machine.h"      /* Used for beer machine. */
 
 #define WINC_CS   8
 #define WINC_IRQ  7
@@ -48,7 +47,9 @@ Adafruit_ADS1115  adc1(ADC_1_ADDRESS);
 Adafruit_ADS1115  adc2(ADC_2_ADDRESS); 
 
 LiquidCrystal_I2C lcd(0x27,20,4); 
-WiFiClient        client;
+LcdDisplay l_display;
+
+WiFiClient client;
 
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
 Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
@@ -76,25 +77,15 @@ void setup(void)
   mqtt.subscribe(&aio_errors);
   mqtt.subscribe(&aio_throttle);
    
-   
   lcd.init();
   lcd.backlight();
-
-
-  byte* lcd_custom_chars[8]     = {charWait0, charWait1, charWait2, charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charSkull};
- // byte* lcd_msg_custom_chars[8] = {charWifi, charAdaFruitNotConnected, charAdaFruitConnected, charSmile, charFrown, charSkull};
-  
-  for (int i = 0; i < 8; i++){
-    lcd.createChar(i, lcd_custom_chars[i]);
-  }
-
-
+  l_display.init(&lcd);
 
                                                                      
-  Serial.print(F("Adafruit:SUBSCRIPTIONDATALEN: "));
-  Serial.println(SUBSCRIPTIONDATALEN);
-  Serial.print(F("Adafruit::MAXBUFFERSIZE: "));
-  Serial.println(MAXBUFFERSIZE);
+  DEBUG_PRINT(F("Adafruit:SUBSCRIPTIONDATALEN: "));
+  DEBUG_PRINTLN(SUBSCRIPTIONDATALEN);
+  DEBUG_PRINT(F("Adafruit::MAXBUFFERSIZE: "));
+  DEBUG_PRINTLN(MAXBUFFERSIZE);
 
   /*
   Set up an array for ADC's so that whenwe set up the slots
@@ -127,12 +118,6 @@ void setup(void)
   slots[4] = &slot5;
   slots[5] = &slot6;
 
-//  for (int i = 0; i < SLOT_COUNT; i++){
-//    if ((*slots[i]).slot_status() == VendSlot::SLOT_STATUS_RUNNING_OUT){
-//      String msg = "WARNING!!!  Slot " + String(i +1) + "  is running OUT of   BEER!!  :(";
-//      lcd_display_msg(msg, &lcd_msg, 100, true, 3000);
-//    }
-//  }
 }
 
 
@@ -162,61 +147,55 @@ void loop(void)
 }
 
 void print_external_temp(){
-    float c = bme.readTemperature();
-    float f = (c*1.8)+32.0f;
-    float hPa = bme.readPressure() / 100.0F;
-    float inHg = (hPa / 3386.0F) * 100.0F;
-    float h = bme.readHumidity();
-    
-    INFO_PRINT(F("Exterinal Temp: "));
-    INFO_PRINT(c,2);
-    INFO_PRINT(F(" *C  "));
-    INFO_PRINT(f,2);
-    INFO_PRINTLN(F(" *F"));
-
-    INFO_PRINT(F("Exterinal Pressure: "));
-    INFO_PRINT(hPa, 4);
-    INFO_PRINT(F(" hPa "));
-    INFO_PRINT(inHg, 4);
-    INFO_PRINTLN(F(" inHg"));
-
-    INFO_PRINT(F("Exterinal Humidity: "));
-    INFO_PRINT(h, 4);
-    INFO_PRINTLN(F("%"));
-
-    lcd.setCursor(13, 2);
-    lcd.print(F("E:"));
-    lcd.print(f, 1);
-    lcd.print((char)223);
+  float c = bme.readTemperature();
+  float f = (c*1.8)+32.0f;
+  float hPa = bme.readPressure() / 100.0F;
+  float inHg = (hPa / 3386.0F) * 100.0F;
+  float h = bme.readHumidity();
+  
+  l_display.set_external_temp(f);
+  l_display.set_external_humidity(h);
+  l_display.set_external_inHg(inHg);
+  
+  INFO_PRINT(F("Exterinal Temp: "));
+  INFO_PRINT(c,2);
+  INFO_PRINT(F(" *C  "));
+  INFO_PRINT(f,2);
+  INFO_PRINTLN(F(" *F"));
+  
+  INFO_PRINT(F("Exterinal Pressure: "));
+  INFO_PRINT(hPa, 4);
+  INFO_PRINT(F(" hPa "));
+  INFO_PRINT(inHg, 4);
+  INFO_PRINTLN(F(" inHg"));
+  
+  INFO_PRINT(F("Exterinal Humidity: "));
+  INFO_PRINT(h, 4);
+  INFO_PRINTLN(F("%"));
 }
 
 
 void print_internal_temp(){
-  float Celcius=0;
-  float Fahrenheit=0;
-
   internalTempSensor.requestTemperatures(); 
-  Celcius =    internalTempSensor.getTempCByIndex(0);
-  Fahrenheit = internalTempSensor.toFahrenheit(Celcius);
+  float c = internalTempSensor.getTempCByIndex(0);
+  float f = internalTempSensor.toFahrenheit(c);
+  l_display.set_internal_temp(f);
   INFO_PRINT(F("Internal Temp in Celcius: "));
-  INFO_PRINTLN(Celcius, 4);
+  INFO_PRINTLN(c, 4);
   INFO_PRINT(F("Internal Temp in Fahrenheit: "));
-  INFO_PRINTLN(Fahrenheit, 4);
-  lcd.setCursor(6, 2);
-  lcd.print(F("I:"));
-  lcd.print(Fahrenheit, 1);
-  lcd.print((char)223);
+  INFO_PRINTLN(f, 4);
+  
 }
 
 void print_amps(){
-    float ACCurrentValue = readACCurrentValue(A0);
-    INFO_PRINT(F("Amps: "));
-    INFO_PRINT(ACCurrentValue, 2);
-    INFO_PRINT(F(" Watts: "));
-    INFO_PRINTLN(ACCurrentValue * 110, 1);
-    lcd.setCursor(0, 2);
-    lcd.print(ACCurrentValue * 110, 1);
-    lcd.print(F("W"));
+  float a = readACCurrentValue(A0);
+  float w = a * 110
+  l_display.set_amps(a);
+  l_display.set_watts(w);
+  INFO_PRINT(F("Amps: "));
+  INFO_PRINT(a, 2);
+  INFO_PRINT(F(" Watts: "));
+  INFO_PRINTLN(w, 1);
 }
 
 
@@ -266,7 +245,6 @@ void vend(char *data) {
         break;      
     }
 
-    //lcd_display_msg(msg, &lcd_msg, 100, true, 4000);
 
   }
   else{
@@ -287,40 +265,62 @@ void vend(char *data) {
 
 
 
-
-// Function to connect and reconnect as necessary to the MQTT server.
-// Should be called in the loop function and it will take care if connecting.
-void MQTT_connect() {
-  int8_t ret;
-
-  // attempt to connect to Wifi network:
+void wifi_connect(){
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(F("Attempting to connect to SSID: "));
-    Serial.println(WIFI_SSID);
+    INFO_PRINT(F("Attempting to connect to SSID: "));
+    INFO_PRINTLN(WIFI_SSID);
+    l_display.clear();
+    l_display.printAt(l_display.center("Connecting To:"), 0, 0);
+    l_display.printAt(l_display.center(WIFI_SSID), 0, 1);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
-
+  
     // wait 10 seconds for connection:
     uint8_t timeout = 10;
     while (timeout && (WiFi.status() != WL_CONNECTED)) {
       timeout--;
-      delay(1000);
+      for (int i = 0; i < 4; i++){
+        l_display.delay_with_animation(250, 1);
+      }
     }
+    
+    l_display.scroll_msg("Wifi Connected", 100, -1);
+    delay(1000);
+    l_display.display_network_info(3000);
   }
+}
+
+
+
+// Function to connect and reconnect as necessary to the MQTT server.
+// Should be called in the loop function and it will take care if connecting.
+void MQTT_connect() {
+  wifi_connect();
   
   // Stop if already connected.
   if (mqtt.connected()) {
+    l_display.set_adafruit_status(true);
     return;
   }
 
-  Serial.print(F("Connecting to MQTT... "));
-
+  /* We have lost connection.  Connecting logic */
+  l_display.set_adafruit_status(false);
+  l_display.clear();
+  l_display.printAt(l_display.center("Connecting To MQTT"), 0, 0);
+  INFO_PRINTLN(F("Connecting to MQTT... "));
+  int8_t ret;
   while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-       Serial.println(mqtt.connectErrorString(ret));
-       Serial.println(F("Retrying MQTT connection in 5 seconds..."));
-       mqtt.disconnect();
-       delay(5000);  // wait 5 seconds
+     mqtt.disconnect();
+     l_display.printAt(l_display.center("MQTT Status:"), 0, 1);
+     l_display.printAt(l_display.center(mqtt.connectErrorString(ret)), 0, 2);
+     
+     INFO_PRINT(F("MQTT Error: "));
+     INFO_PRINTLN(mqtt.connectErrorString(ret));
+     INFO_PRINTLN(F("Retrying MQTT connection in 5 seconds..."));
+     for (int i = 0; i < 21; i++){  /* 5 Second Delay  with animation */
+        l_display.delay_with_animation(250, 1);
+     }
   }
-  Serial.println(F("MQTT Connected!"));
-  lcd.setCursor(0,3);
-  lcd.print(F("MQTT Connected!"));
+  INFO_PRINTLN(F("MQTT Connected!"));
+  l_display.set_adafruit_status(true);
+  l_display.display_default_status();
 }
