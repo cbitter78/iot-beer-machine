@@ -1,0 +1,28 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/Users/cbitte000/Library/Arduino15/packages/adafruit/tools/**",
+                "/Users/cbitte000/Documents/Arduino/libraries/**",
+                "/Applications/Arduino.app/Contents/Java/libraries/**",
+                "/Users/cbitte000/Library/Arduino15/packages/adafruit/hardware/samd/1.6.1/**"
+            ],
+            "forcedInclude": [
+                "/Users/cbitte000/Library/Arduino15/packages/adafruit/hardware/samd/1.6.1/cores/arduino/Arduino.h"
+            ],
+            "defines": [
+                "USBCON"
+            ],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/usr/local/bin/gcc-10",
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++14"
+        }
+    ],
+    "version": 4
+}

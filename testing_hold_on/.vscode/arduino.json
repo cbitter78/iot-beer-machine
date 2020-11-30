@@ -1,0 +1,5 @@
+{
+    "board": "adafruit:samd:adafruit_feather_m0",
+    "sketch": "iot-beer-machine/iot-beer-machine.ino",
+    "configuration": "usbstack=arduino,debug=off"
+}

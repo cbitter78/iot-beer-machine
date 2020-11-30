@@ -1,10 +1,10 @@
 #include <Adafruit_ADS1015.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>
 #include <ArduinoJson.h>                    // https://arduinojson.org/v6/assistant/
 #include <LiquidCrystal_I2C.h>
+#include <Adafruit_BME280.h>
 #include <DallasTemperature.h>
 #include <OneWire.h>
 #include <WiFi101.h>
@@ -16,17 +16,28 @@
 #include "secrets.h"
 #include "logging.h"
 #include "lcd_display.h"
-
-Adafruit_BME280 bme;
+#include "hold_on.h"
 
 
 #include "mock_machine.h"  /* Only used when testing. */
 //#include "machine.h"      /* Used for beer machine. */
 
+/* Set up HoldOn timers */
+void every_30_seconds();
+void every_1_minute();
+void every_15_minutes();
+void every_60_minutes();
+
+HoldOn every30s((30 * 1000),      every_30_seconds);
+HoldOn every1m ((60 * 1000),      every_1_minute);
+HoldOn every15m((15 * 60 * 1000), every_15_minutes);
+HoldOn every60m((60 * 60 * 1000), every_15_minutes);
+
 #define WINC_CS   8
 #define WINC_IRQ  7
 #define WINC_RST  4
 #define WINC_EN   2  
+WiFiClient client;
 
 /*
  A slot will need to be defined for each slot in the beer machine.
@@ -49,39 +60,32 @@ Adafruit_ADS1115  adc2(ADC_2_ADDRESS);
 LiquidCrystal_I2C lcd(0x27,20,4); 
 LcdDisplay l_display;
 
-WiFiClient client;
+/* Sensors */
+OneWire oneWire(15);
+DallasTemperature internalTempSensor(&oneWire);
+Adafruit_BME280 bme;
 
+/* All things MQTT */
 Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
 Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
 Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
 Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/errors");
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 
-
-OneWire oneWire(15);
-DallasTemperature internalTempSensor(&oneWire);
-
-void setup(void)
-{
+void setup(void){
   Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
   
-  internalTempSensor.begin();
-  unsigned status = bme.begin();  
-  if (!status) {
-      ERROR_PRINTLN(F("Could not find a valid BME280 sensor, check wiring, address, sensor ID!"));
-  }
-  
-  WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
-
-  mqtt.subscribe(&aio_command);
-  mqtt.subscribe(&aio_errors);
-  mqtt.subscribe(&aio_throttle);
-   
   lcd.init();
   lcd.backlight();
   l_display.init(&lcd);
 
-                                                                     
+  WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
+  wifi_connect()
+
+  mqtt.subscribe(&aio_command);
+  mqtt.subscribe(&aio_errors);
+  mqtt.subscribe(&aio_throttle);                                                         
   DEBUG_PRINT(F("Adafruit:SUBSCRIPTIONDATALEN: "));
   DEBUG_PRINTLN(SUBSCRIPTIONDATALEN);
   DEBUG_PRINT(F("Adafruit::MAXBUFFERSIZE: "));
@@ -104,12 +108,12 @@ void setup(void)
   object will be destroyed and the pointer will point to the wrong
   memory.
   */ 
-  slot1.setup(1, SLOT_1_DIO_PIN, adcs[SLOT_1_VEND_ADC], SLOT_1_VEND_ADC_PIN, adcs[SLOT_1_EMPTY_ADC], SLOT_1_EMPTY_ADC_PIN, &lcd, 0, 7);
-  slot2.setup(2, SLOT_2_DIO_PIN, adcs[SLOT_2_VEND_ADC], SLOT_2_VEND_ADC_PIN, adcs[SLOT_2_EMPTY_ADC], SLOT_2_EMPTY_ADC_PIN, &lcd, 0, 12);
-  slot3.setup(3, SLOT_3_DIO_PIN, adcs[SLOT_3_VEND_ADC], SLOT_3_VEND_ADC_PIN, adcs[SLOT_3_EMPTY_ADC], SLOT_3_EMPTY_ADC_PIN, &lcd, 0, 17);
-  slot4.setup(4, SLOT_4_DIO_PIN, adcs[SLOT_4_VEND_ADC], SLOT_4_VEND_ADC_PIN, adcs[SLOT_4_EMPTY_ADC], SLOT_4_EMPTY_ADC_PIN, &lcd, 1, 7);
-  slot5.setup(5, SLOT_5_DIO_PIN, adcs[SLOT_5_VEND_ADC], SLOT_5_VEND_ADC_PIN, adcs[SLOT_5_EMPTY_ADC], SLOT_5_EMPTY_ADC_PIN, &lcd, 1, 12);
-  slot6.setup(6, SLOT_6_DIO_PIN, adcs[SLOT_6_VEND_ADC], SLOT_6_VEND_ADC_PIN, adcs[SLOT_6_EMPTY_ADC], SLOT_6_EMPTY_ADC_PIN, &lcd, 1, 17);;
+  slot1.setup(1, SLOT_1_DIO_PIN, adcs[SLOT_1_VEND_ADC], SLOT_1_VEND_ADC_PIN, adcs[SLOT_1_EMPTY_ADC], SLOT_1_EMPTY_ADC_PIN, &l_display);
+  slot2.setup(2, SLOT_2_DIO_PIN, adcs[SLOT_2_VEND_ADC], SLOT_2_VEND_ADC_PIN, adcs[SLOT_2_EMPTY_ADC], SLOT_2_EMPTY_ADC_PIN, &l_display);
+  slot3.setup(3, SLOT_3_DIO_PIN, adcs[SLOT_3_VEND_ADC], SLOT_3_VEND_ADC_PIN, adcs[SLOT_3_EMPTY_ADC], SLOT_3_EMPTY_ADC_PIN, &l_display);
+  slot4.setup(4, SLOT_4_DIO_PIN, adcs[SLOT_4_VEND_ADC], SLOT_4_VEND_ADC_PIN, adcs[SLOT_4_EMPTY_ADC], SLOT_4_EMPTY_ADC_PIN, &l_display);
+  slot5.setup(5, SLOT_5_DIO_PIN, adcs[SLOT_5_VEND_ADC], SLOT_5_VEND_ADC_PIN, adcs[SLOT_5_EMPTY_ADC], SLOT_5_EMPTY_ADC_PIN, &l_display);
+  slot6.setup(6, SLOT_6_DIO_PIN, adcs[SLOT_6_VEND_ADC], SLOT_6_VEND_ADC_PIN, adcs[SLOT_6_EMPTY_ADC], SLOT_6_EMPTY_ADC_PIN, &l_display);
 
   slots[0] = &slot1;
   slots[1] = &slot2;
@@ -118,11 +122,15 @@ void setup(void)
   slots[4] = &slot5;
   slots[5] = &slot6;
 
+  internalTempSensor.begin(); 
+  if (!bme.begin()) {
+      l_display.disply_msg("Cloud not find BME280 sensor!", 3000);
+      ERROR_PRINTLN(F("Could not find a valid BME280 sensor, check wiring, address, sensor ID!"));
+  }
 }
 
 
-void loop(void)
-{
+void loop(void){
     MQTT_connect();
       
     Adafruit_MQTT_Subscribe *sub;
@@ -136,14 +144,39 @@ void loop(void)
         ERROR_PRINT(F("THROTTLE ERROR: "));
         ERROR_PRINTLN((char *)aio_throttle.lastread);
       }  
-    }
+    }   
+    flash_built_in_led();
+    every30s.ReadyYet();
+    every1m.ReadyYet();
+    every15m.ReadyYet();
+    every60m.ReadyYet();
+}
 
+void every_30_seconds(){
     mqtt_ping(&mqtt);
-       
-    flash(13);
     print_amps();
     print_internal_temp();
     print_external_temp();
+}
+void every_1_minute(){
+
+}
+void every_15_minutes(){
+
+}
+void every_60_minutes(){
+
+}
+
+
+
+
+
+void flash_built_in_led(){
+  digitalWrite(LED_BUILTIN, HIGH); 
+  delay(250);                     
+  digitalWrite(LED_BUILTIN, LOW);  
+  delay(250);                       
 }
 
 void print_external_temp(){

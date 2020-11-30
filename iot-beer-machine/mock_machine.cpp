@@ -1,3 +1,21 @@
+
+
+#ifndef MACHINE
+
+#include "machine.h"
+
+
+
+
+/*
+ * This file holds values that are unique to a beer machine wireing.
+ * This abstraction is needed to support a test harness which may
+ * be wired differently than the actual beer machine.
+ */
+#include <Adafruit_BME280.h>
+#include <DallasTemperature.h>
+
+
 /*
 
 This file holds values that are unique to a beer machine wireing.
@@ -46,3 +64,5 @@ file when deploying to the actual beer machine.
 #define SLOT_4_EMPTY_ADC_PIN 3
 #define SLOT_5_EMPTY_ADC_PIN 2
 #define SLOT_6_EMPTY_ADC_PIN 3
+
+#endif

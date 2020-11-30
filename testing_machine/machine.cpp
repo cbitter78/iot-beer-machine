@@ -1,5 +1,9 @@
-#ifndef MACHINE_H
-#define MACHINE_H
+#define MACHINE;
+
+#ifdef MACHINE
+#include "lcd_display.h"
+
+
 
 /*
  * This file holds values that are unique to a beer machine wireing.
@@ -8,12 +12,8 @@
  */
 #include <Adafruit_BME280.h>
 #include <DallasTemperature.h>
-#include "lcd_display.h"
 
-struct internalSensorData {
-    float cTemp;
-    float fTemp;
-};
+
 
 #define ADC_0_ADDRESS 0x48
 #define ADC_1_ADDRESS 0x49
@@ -54,23 +54,11 @@ struct internalSensorData {
 #define SLOT_5_EMPTY_ADC_PIN 2
 #define SLOT_6_EMPTY_ADC_PIN 3
 
-class Machine {
-
-public:
-  Machine(DallasTemperature *internalTempSensor, Adafruit_BME280 *bme);
-  float read_internal();
-  float read_power_usage();
-  float read_external();  
 
 
-protected:
+Machine::Machine(DallasTemperature *internalTempSensor, Adafruit_BME280 *bme){
 
-  DallasTemperature *_internalTempSensor;  
-  Adafruit_BME280 *_externalBMESensor;  
-  
-  /* Methods */
+}
 
-};
+#endif
 
-
-#endif /* MACHINE_H */ 
