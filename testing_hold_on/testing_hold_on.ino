@@ -5,8 +5,8 @@
 void hold_on_one();
 void hold_on_two();
 
-HoldOn h1(12345, hold_on_one);
-HoldOn h2(1085,  hold_on_two);
+HoldOn h1(10000, hold_on_one);
+HoldOn h2(1000,  hold_on_two);
 
 void setup() {
   Serial.begin(115200);
@@ -15,11 +15,11 @@ void setup() {
 }
 
 void hold_on_one(){
-    Serial.println("Hold on 1 function called");
+    Serial.println("Hold on function called (Every 10 Seconds)");
 }
 
 void hold_on_two(){
-    Serial.println("Hold on 2 function called");
+    Serial.println("Hold on function called (Every 1 Second)");
 }
 
 void loop() {
@@ -31,7 +31,7 @@ void loop() {
 
 void flash(){
   digitalWrite(LED_BUILTIN, HIGH); 
-  delay(500);                     
+  delay(250);                     
   digitalWrite(LED_BUILTIN, LOW);  
-  delay(500);                       
+  delay(250);                       
 }

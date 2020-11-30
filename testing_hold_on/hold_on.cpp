@@ -8,10 +8,14 @@ HoldOn::HoldOn(unsigned long wait_interval, HoldOnCallBack cb){
 }
 
 void HoldOn::ReadyYet(){
+    /*
+     * Check to see if time is greater then _ready.   Depending on what else
+     * is going on in your program the timing may be off.   This class does 
+     * not try to fix that.  It just runs the _call_back() method if _ready
+     * is some time in the past.  For many things this is good enough.
+     */
     unsigned long t = millis();
-    if (_ready < t){ 
-      
-      /* We have reached the timeout */
+    if (_ready <= t){ 
       _call_back();  
   
      /* 
