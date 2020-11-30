@@ -3,7 +3,7 @@
 
 #include <Adafruit_BME280.h>
 #include <DallasTemperature.h>
-#include "VendSlot.h"
+#include "vend_slot.h"
 
 struct internalSensorData {
     float CelciusTemp;
@@ -33,6 +33,7 @@ public:
   powerSensorData read_power_usage();
   static const int SLOT_COUNT = 6;
   VendSlot* slots[SLOT_COUNT];
+  void update_all_slot_status();
   String name();
   
 

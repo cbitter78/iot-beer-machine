@@ -1,22 +1,15 @@
-#include <Adafruit_ADS1015.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>                
-
 #include <ArduinoJson.h>         /* https://arduinojson.org/v6/assistant */
-
 #include <LiquidCrystal_I2C.h>
-
 #include <WiFi101.h>
-
-
-#include "VendSlot.h"
 
 #include "secrets.h"
 #include "logging.h"
-#include "lcd_display.h"
 #include "hold_on.h"
-
-#include "machine.h"      /* Switch from machine and mock machine in the respeictive .cpp files */
+#include "lcd_display.h"
+#include "vend_slot.h"
+#include "machine.h"             /* Switch from machine and mock machine in the respeictive .cpp files */
 
 /* Set up HoldOn timers */
 void every_30_seconds();
@@ -72,6 +65,7 @@ void setup(void){
 
 void loop(void){
     MQTT_connect();
+    update_sensor_data();
       
     Adafruit_MQTT_Subscribe *sub;
     while ((sub = mqtt.readSubscription(10000))) {
@@ -86,15 +80,13 @@ void loop(void){
       }  
     }   
     flash_built_in_led();
-    print_sensor_data();
-
     every30s.ReadyYet();
     every1m.ReadyYet();
     every15m.ReadyYet();
     every60m.ReadyYet();
 }
 
-void print_sensor_data(){
+void update_sensor_data(){
   externalSensorData ed = machine.read_external();
   internalSensorData id = machine.read_internal();
   powerSensorData    pd = machine.read_power_usage();
@@ -106,19 +98,18 @@ void print_sensor_data(){
   l_display.set_amps(pd.Amps);
   l_display.set_watts(pd.Watts);
  
-  for (int i = 0; i <  Machine::SLOT_COUNT; i++){
-    VendSlot v = *machine.slots[i];
-    l_display.set_slot_status(i, v.slot_status());
-  }
+  machine.update_all_slot_status();
 }
 
 void every_30_seconds(){
   DEBUG_PRINTLN("every_30_seconds:");
+  MQTT_connect();
   mqtt.ping();
 }
 
 void every_1_minute(){
   DEBUG_PRINTLN("every_1_minute:");
+  l_display.display_network_info(5000);
 }
 
 void every_15_minutes(){
@@ -157,6 +148,8 @@ void vend(char *data) {
     l_display.start_vend(cmd_slot, beer);
     v.vend();
     if (v.slot_status() != SLOT_STATUS_OK){
+      ERROR_PRINT(F("vend: Vending Error: slot_status: "));
+      ERROR_PRINT(v.slot_status());
       vend_status_str = String(v.slot_status());
     }
     l_display.finish_vend(beer, drinker, 4000);

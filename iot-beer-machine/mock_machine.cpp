@@ -1,67 +1,64 @@
-//#define MOCK_MACHINE
+#define MOCK_MACHINE
 
 #ifdef MOCK_MACHINE
 
+#include <Adafruit_ADS1015.h>
 #include "machine.h"
 #include "logging.h"
 
 /*
-This file holds values that are unique to a beer machine wireing.
-This abstraction is needed to support a test harness which may
-be wired differently than the actual beer machine.
+ * This class sets up the VendSlots and performs machine 
+ * Specific operations (Test Rig).  We don't fully abstract logic here because
+ * the aim was just a abstract enough to allow for a test rig.
+ */
 
-This is the test harness definition do not include this header
-file when deploying to the actual beer machine.
+VendSlot  slot1;
+VendSlot  slot2;
+VendSlot  slot3;
+VendSlot  slot4;
+VendSlot  slot5;
+VendSlot  slot6;
 
-*/
-#define ADC_0_ADDRESS 0x48
-#define ADC_1_ADDRESS 0x48
-#define ADC_2_ADDRESS 0x48
+Adafruit_ADS1115  adc(0x48); 
 
-#define SLOT_1_DIO_PIN 12
-#define SLOT_2_DIO_PIN 11
-#define SLOT_3_DIO_PIN 12
-#define SLOT_4_DIO_PIN 11
-#define SLOT_5_DIO_PIN 12
-#define SLOT_6_DIO_PIN 11
-
-#define SLOT_1_VEND_ADC 1 
-#define SLOT_2_VEND_ADC 1 
-#define SLOT_3_VEND_ADC 1 
-#define SLOT_4_VEND_ADC 1 
-#define SLOT_5_VEND_ADC 0 
-#define SLOT_6_VEND_ADC 0 
-
-#define SLOT_1_VEND_ADC_PIN 0
-#define SLOT_2_VEND_ADC_PIN 1
-#define SLOT_3_VEND_ADC_PIN 0
-#define SLOT_4_VEND_ADC_PIN 1
-#define SLOT_5_VEND_ADC_PIN 0
-#define SLOT_6_VEND_ADC_PIN 1
-
-#define SLOT_1_EMPTY_ADC 0 
-#define SLOT_2_EMPTY_ADC 0 
-#define SLOT_3_EMPTY_ADC 2 
-#define SLOT_4_EMPTY_ADC 2 
-#define SLOT_5_EMPTY_ADC 2 
-#define SLOT_6_EMPTY_ADC 2 
-
-#define SLOT_1_EMPTY_ADC_PIN 2
-#define SLOT_2_EMPTY_ADC_PIN 3
-#define SLOT_3_EMPTY_ADC_PIN 2
-#define SLOT_4_EMPTY_ADC_PIN 3
-#define SLOT_5_EMPTY_ADC_PIN 2
-#define SLOT_6_EMPTY_ADC_PIN 3
-
-
-Machine::Machine(){
+Machine::Machine(LcdDisplay *lcd_display){
+    _display = lcd_display;
     _machine_name = "Mock test rig";
     _BMEStatus = false; 
 }
 
 void Machine::init(){
     DEBUG_PRINTLN("MockMachine::init");
+    DEBUG_PRINTLN("Machine::init");
+
+    adc.begin();
+
+    slot1.setup(1, 12, &adc, 0, &adc, 2, _display);
+    slot2.setup(2, 11, &adc, 1, &adc, 3, _display);
+    slot3.setup(3, 12, &adc, 0, &adc, 2, _display);
+    slot4.setup(4, 11, &adc, 1, &adc, 3, _display);
+    slot5.setup(5, 12, &adc, 0, &adc, 2, _display);
+    slot6.setup(6, 11, &adc, 1, &adc, 3, _display);
+  
+    slots[0] = &slot1;
+    slots[1] = &slot2;
+    slots[2] = &slot3;
+    slots[3] = &slot4;
+    slots[4] = &slot5;
+    slots[5] = &slot6;
+    update_all_slot_status();
 }
+
+void Machine::update_all_slot_status(){
+    LcdDisplay lcd = *_display;
+    lcd.set_slot_status(0, slot1.slot_status());
+    lcd.set_slot_status(1, slot2.slot_status());
+    lcd.set_slot_status(2, slot3.slot_status());
+    lcd.set_slot_status(3, slot4.slot_status());
+    lcd.set_slot_status(4, slot5.slot_status());
+    lcd.set_slot_status(5, slot6.slot_status());
+}
+
 
 internalSensorData Machine::read_internal(){
     DEBUG_PRINTLN(F("MockMachine::read_internal"));

@@ -1,58 +1,23 @@
 /*
- * This file holds values that are unique to a beer machine wireing.
- * This abstraction is needed to support a test harness which may
- * be wired differently than the actual beer machine.
+ * This class sets up the VendSlots and performs machine 
+ * Specific operations.  We don't fully abstract logic here because
+ * the aim was just a abstract enough to allow for a test rig.
  */
 
-#define MACHINE
+//#define MACHINE
 #ifdef MACHINE
-
-#include <Adafruit_BME280.h>
-#include <DallasTemperature.h>
-#include <OneWire.h>
 
 #include "machine.h"
 #include "yhdc.h"
 #include "logging.h"
 
-#define SLOT_1_DIO_PIN 9
-#define SLOT_2_DIO_PIN 10
-#define SLOT_3_DIO_PIN 11
-#define SLOT_4_DIO_PIN 12
-#define SLOT_5_DIO_PIN 5
-#define SLOT_6_DIO_PIN 6
-
-#define SLOT_1_VEND_ADC 1 
-#define SLOT_2_VEND_ADC 1 
-#define SLOT_3_VEND_ADC 1 
-#define SLOT_4_VEND_ADC 1 
-#define SLOT_5_VEND_ADC 0 
-#define SLOT_6_VEND_ADC 0 
-
-#define SLOT_1_VEND_ADC_PIN 0
-#define SLOT_2_VEND_ADC_PIN 1
-#define SLOT_3_VEND_ADC_PIN 2
-#define SLOT_4_VEND_ADC_PIN 3
-#define SLOT_5_VEND_ADC_PIN 0
-#define SLOT_6_VEND_ADC_PIN 1
-
-#define SLOT_1_EMPTY_ADC 0 
-#define SLOT_2_EMPTY_ADC 0 
-#define SLOT_3_EMPTY_ADC 2 
-#define SLOT_4_EMPTY_ADC 2 
-#define SLOT_5_EMPTY_ADC 2 
-#define SLOT_6_EMPTY_ADC 2 
-
-#define SLOT_1_EMPTY_ADC_PIN 2
-#define SLOT_2_EMPTY_ADC_PIN 3
-#define SLOT_3_EMPTY_ADC_PIN 0
-#define SLOT_4_EMPTY_ADC_PIN 1
-#define SLOT_5_EMPTY_ADC_PIN 2
-#define SLOT_6_EMPTY_ADC_PIN 3
-
+#include <Adafruit_ADS1015.h>
+#include <Adafruit_BME280.h>
+#include <DallasTemperature.h>
+#include <OneWire.h>
 
 /* Sensors */
-#define AMP_MEETER_ANALOG_PIN    A0
+#define AMP_MEETER_ANALOG_PIN A0
 
 OneWire oneWire(15);
 DallasTemperature internalTempSensor(&oneWire);
@@ -65,12 +30,9 @@ VendSlot  slot4;
 VendSlot  slot5;
 VendSlot  slot6;
 
-#define ADC_COUNT 3
-Adafruit_ADS1115* adcs[ADC_COUNT];
 Adafruit_ADS1115  adc0(0x48); 
 Adafruit_ADS1115  adc1(0x49); 
 Adafruit_ADS1115  adc2(0x4A); 
-
 
 
 Machine::Machine(LcdDisplay *lcd_display){
@@ -84,19 +46,16 @@ Machine::Machine(LcdDisplay *lcd_display){
 void Machine::init(){
     DEBUG_PRINTLN("Machine::init");
 
-    adcs[0] = &adc0;
-    adcs[1] = &adc1;
-    adcs[2] = &adc2;
-    for (int i = 0; i < ADC_COUNT; i++){
-      (*adcs[i]).begin();
-    }
+    adc0.begin();
+    adc1.begin();
+    adc2.begin();
 
-    slot1.setup(1, SLOT_1_DIO_PIN, adcs[SLOT_1_VEND_ADC], SLOT_1_VEND_ADC_PIN, adcs[SLOT_1_EMPTY_ADC], SLOT_1_EMPTY_ADC_PIN, _display);
-    slot2.setup(2, SLOT_2_DIO_PIN, adcs[SLOT_2_VEND_ADC], SLOT_2_VEND_ADC_PIN, adcs[SLOT_2_EMPTY_ADC], SLOT_2_EMPTY_ADC_PIN, _display);
-    slot3.setup(3, SLOT_3_DIO_PIN, adcs[SLOT_3_VEND_ADC], SLOT_3_VEND_ADC_PIN, adcs[SLOT_3_EMPTY_ADC], SLOT_3_EMPTY_ADC_PIN, _display);
-    slot4.setup(4, SLOT_4_DIO_PIN, adcs[SLOT_4_VEND_ADC], SLOT_4_VEND_ADC_PIN, adcs[SLOT_4_EMPTY_ADC], SLOT_4_EMPTY_ADC_PIN, _display);
-    slot5.setup(5, SLOT_5_DIO_PIN, adcs[SLOT_5_VEND_ADC], SLOT_5_VEND_ADC_PIN, adcs[SLOT_5_EMPTY_ADC], SLOT_5_EMPTY_ADC_PIN, _display);
-    slot6.setup(6, SLOT_6_DIO_PIN, adcs[SLOT_6_VEND_ADC], SLOT_6_VEND_ADC_PIN, adcs[SLOT_6_EMPTY_ADC], SLOT_6_EMPTY_ADC_PIN, _display);
+    slot1.setup(1, 9,  &adc1, 0, &adc0, 2, _display);
+    slot2.setup(2, 10, &adc1, 1, &adc0, 3, _display);
+    slot3.setup(3, 11, &adc1, 2, &adc2, 0, _display);
+    slot4.setup(4, 12, &adc1, 3, &adc2, 1, _display);
+    slot5.setup(5, 5,  &adc0, 0, &adc2, 2, _display);
+    slot6.setup(6, 6,  &adc0, 1, &adc2, 3, _display);
   
     slots[0] = &slot1;
     slots[1] = &slot2;
@@ -114,6 +73,17 @@ void Machine::init(){
     }else{
         _BMEStatus = true;
     } 
+    update_all_slot_status();
+}
+
+void Machine::update_all_slot_status(){
+    LcdDisplay lcd = *_display;
+    lcd.set_slot_status(0, slot1.slot_status());
+    lcd.set_slot_status(1, slot2.slot_status());
+    lcd.set_slot_status(2, slot3.slot_status());
+    lcd.set_slot_status(3, slot4.slot_status());
+    lcd.set_slot_status(4, slot5.slot_status());
+    lcd.set_slot_status(5, slot6.slot_status());
 }
 
 internalSensorData Machine::read_internal(){

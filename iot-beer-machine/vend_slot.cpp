@@ -1,4 +1,4 @@
-#include "VendSlot.h"
+#include "vend_slot.h"
 #include "logging.h"
 
 VendSlot::VendSlot(){
@@ -25,7 +25,8 @@ void VendSlot::setup(int slot_number, int relay_pin,
     _slot_low_adc     = slot_low_adc;
     _slot_low_adc_pin = slot_low_adc_pin;
     _display          = lcd_display;
-    pinMode(_relay_pin, INPUT_PULLUP);
+    digitalWrite(_relay_pin, HIGH); 
+    pinMode(_relay_pin, OUTPUT);
     reset();
 }
 
