@@ -71,12 +71,18 @@ void loop(void){
     while ((sub = mqtt.readSubscription(10000))) {
       if (sub == &aio_command) {
         vend((char *)aio_command.lastread);
+        
       } else if(sub == &aio_errors) {
-        ERROR_PRINT(F("ERROR: "));
-        ERROR_PRINTLN((char *)aio_errors.lastread);
+        String mqtt_error = String((char *)aio_errors.lastread);
+        ERROR_PRINT(F("MQTT ERROR: "));
+        ERROR_PRINTLN(mqtt_error);
+        l_display.scroll_msg(String(F("  ..!MQTT ERROR!..  ")) + mqtt_error, 80, 10000);
+
       } else if(sub == &aio_throttle){
-        ERROR_PRINT(F("THROTTLE ERROR: "));
-        ERROR_PRINTLN((char *)aio_throttle.lastread);
+        String mqtt_error = String((char *)aio_errors.lastread);
+        ERROR_PRINT(F("MQTT THROTTLE ERROR: "));
+        ERROR_PRINTLN(mqtt_error);
+        l_display.scroll_msg(String(F("  !MQTT THROTTLE!   ")) + mqtt_error, 80, 10000);
       }  
     }   
     flash_built_in_led();
@@ -121,12 +127,12 @@ void every_60_minutes(){
 }
 
 void vend(char *data) {
-  DEBUG_PRINT(F("vend:received <- "));
+  DEBUG_PRINT(F("vend:data: "));
   DEBUG_PRINTLN(data);
  
   // Parse the JSON document 
   // Example:
-  //          {"name":"vend","id":"1","slot":2,"args":["Charles"]}
+  //          {"name":"vend","id":"1","slot":2,"args":["Charles", "Beer"]}
   //
   DynamicJsonDocument doc(200);
   DeserializationError err = deserializeJson(doc, data);
@@ -142,30 +148,35 @@ void vend(char *data) {
   const char* drinker    = doc["args"][0]; 
   const char* beer       = doc["args"][1];
   int         cmd_slot   = doc["slot"];
-  
+ 
   if (cmd_slot <= Machine::SLOT_COUNT && cmd_slot > 0){
     VendSlot v = *machine.slots[cmd_slot];
     l_display.start_vend(cmd_slot, beer);
     v.vend();
-    if (v.slot_status() != SLOT_STATUS_OK){
-      ERROR_PRINT(F("vend: Vending Error: slot_status: "));
+    
+    int slot_status = v.slot_status();
+    if (slot_status > SLOT_STATUS_RUNNING_OUT){
+      ERROR_PRINT(F("vend:ERROR: slot_status: "));
       ERROR_PRINT(v.slot_status());
-      vend_status_str = String(v.slot_status());
+      vend_status_str = String(slot_status);
+      l_display.scroll_msg(String(F("  !!VENDING ERROR!!     Error Code: ")) + vend_status_str, 80, 4000);
+    }else if(slot_status == SLOT_STATUS_RUNNING_OUT){
+      vend_status_str = "OK,RUNNING_OUT";
     }
+    
     l_display.finish_vend(beer, drinker, 4000);
     l_display.display_default_status();
   }
   else{
-    //TODO: Post an error back
     vend_status_str = "NO_SUCH_SLOT";
-    ERROR_PRINTLN("Slot " + String(cmd_slot) + " does not exists and cant give you beer :(");
+    WARN_PRINTLN("vend: slot: " + String(cmd_slot) + " does not exists");
   }
 
   String rx = String(cmd_id) + "::" + vend_status_str;
   char buff[rx.length() + 1];
   rx.toCharArray(buff, rx.length() +1);
   if (! aio_command_rx.publish(buff)) {
-    ERROR_PRINT(F("Failed to post to cmd_rx"));
+    ERROR_PRINT(F("vend: ERROR:MQTT: Failed to post to cmd_rx. post_data: "));
     ERROR_PRINTLN(buff);
   } 
 }

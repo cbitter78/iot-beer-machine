@@ -30,11 +30,12 @@ public:
   void init();
   internalSensorData read_internal();
   externalSensorData read_external();  
-  powerSensorData read_power_usage();
-  static const int SLOT_COUNT = 6;
-  VendSlot* slots[SLOT_COUNT];
+  powerSensorData    read_power_usage();
   void update_all_slot_status();
   String name();
+
+  static const int SLOT_COUNT = 6;
+  VendSlot* slots[SLOT_COUNT];
   
 
 protected:
