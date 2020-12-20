@@ -1,8 +1,7 @@
 #include <Adafruit_MQTT.h>
-#include <Adafruit_MQTT_Client.h>                
+#include <Adafruit_MQTT_Client.h>  
+#include <WiFi101.h>              
 #include <ArduinoJson.h>         /* https://arduinojson.org/v6/assistant */
-#include <LiquidCrystal_I2C.h>
-#include <WiFi101.h>
 
 #include "secrets.h"
 #include "logging.h"
@@ -28,9 +27,7 @@ HoldOn every60m((60 * 60 * 1000), every_60_minutes);
 #define WINC_EN   2  
 
 
-LiquidCrystal_I2C lcd(0x27,20,4); 
 LcdDisplay l_display;
-
 Machine machine(&l_display);
 
 /* All things MQTT */
@@ -46,9 +43,8 @@ void setup(void){
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   
-  lcd.init();
-  lcd.backlight();
-  l_display.init(&lcd);
+
+  l_display.init();
 
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
   wifi_connect();

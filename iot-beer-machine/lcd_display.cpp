@@ -1,6 +1,9 @@
 #include "lcd_display.h"
 #include "logging.h"
+
 #include <WiFi101.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
 /*  
   Class to manage the display for the iot beer machine.
@@ -8,8 +11,9 @@
 */
 
 
+LiquidCrystal_I2C l(0x27,20,4);
+
 LcdDisplay::LcdDisplay(){
-    _lcd = NULL;
     _adafruit_status     = false;
     _slot_animation_col  = 0;
     _slot_animation_skip = 0;
@@ -25,9 +29,9 @@ LcdDisplay::LcdDisplay(){
 }
 
 
-void LcdDisplay::init(LiquidCrystal_I2C *lcd){
-    _lcd = lcd;
-    LiquidCrystal_I2C l = *_lcd;  
+void LcdDisplay::init(){
+    l.init();
+    l.backlight();
 
     // See https://maxpromer.github.io/LCD-Character-Creator/ to make custom LCD characters
     byte pack_man_open[]        = {B00000,B00111,B01110,B01100,B01110,B00111,B00000,B00000};
@@ -107,7 +111,7 @@ void LcdDisplay::start_vend(int slot, const char beer[]){
   DEBUG_PRINT(F(", beer: "));
   DEBUG_PRINT(beer);
   DEBUG_PRINTLN(F(")"));
-  LiquidCrystal_I2C l = *_lcd;
+
   l.clear();
   l.home();
   String slot_name = String("Slot #") + String(SLOT_NAMES[slot]);
@@ -127,7 +131,7 @@ void LcdDisplay::finish_vend(const char beer[], const char drinker[], int delay_
   DEBUG_PRINT(F(", drinker: "));
   DEBUG_PRINT(drinker);
   DEBUG_PRINTLN(F(")"));
-  LiquidCrystal_I2C l = *_lcd;
+
   l.clear();
   l.home();
   l.print(center(drinker));
@@ -150,7 +154,6 @@ void LcdDisplay::delay_with_animation(int delay_time, int animation_ratio){
     _slot_animation_skip++;
     return;  
   }
-  LiquidCrystal_I2C l = *_lcd;
 
   /* Reset the animation column to zero once we have printed
    * all the pack man and goeast.
@@ -220,8 +223,6 @@ void LcdDisplay::scroll_msg(String msg, int scroll_delay, int delay_then_display
   DEBUG_PRINT(scroll_delay);
   DEBUG_PRINTLN(F(")"));
 
-
-  LiquidCrystal_I2C l = *_lcd;
   l.clear();
   l.home();
 
@@ -367,13 +368,11 @@ void LcdDisplay::set_adafruit_status(bool s){
 
 void LcdDisplay::backlight_on(){
     DEBUG_PRINTLN(F("LcdDisplay::backlight_on()"));
-    LiquidCrystal_I2C l = *_lcd;
     l.backlight();
 }
 
 void LcdDisplay::backlight_off(){
     DEBUG_PRINTLN(F("LcdDisplay::backlight_off()"));
-    LiquidCrystal_I2C l = *_lcd;
     l.noBacklight();
 }
 
@@ -385,7 +384,6 @@ void LcdDisplay::writeAt(uint8_t v, uint8_t col, uint8_t row){
     DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
     DEBUG_PRINTLN(F(")"));
-    LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.write(v);
 }
@@ -398,7 +396,6 @@ void LcdDisplay::printAt(float f, int accuracy, uint8_t col, uint8_t row){
     DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
     DEBUG_PRINTLN(F(")"));
-    LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.print(f, accuracy);
 }
@@ -411,7 +408,6 @@ void LcdDisplay::printAt(const char c[], uint8_t col, uint8_t row){
     DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
     DEBUG_PRINTLN(F(")"));
-    LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.printstr(c);
 }
@@ -424,7 +420,6 @@ void LcdDisplay::printAt(String s, uint8_t col, uint8_t row){
     DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
     DEBUG_PRINTLN(F(")"));
-    LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.print(s);
 }
@@ -438,39 +433,32 @@ void LcdDisplay::printAt(char c, uint8_t col, uint8_t row){
     DEBUG_PRINT(F(", row:"));
     DEBUG_PRINT(row);
     DEBUG_PRINTLN(F(")"));
-    LiquidCrystal_I2C l = *_lcd;
     l.setCursor(col, row);
     l.print(c);
 }
 
 void LcdDisplay::write(uint8_t value){
-    LiquidCrystal_I2C l = *_lcd;
     l.write(value);
 }
 
 void LcdDisplay::print(char c){
-    LiquidCrystal_I2C l = *_lcd;
     l.print(c);
 }
 
 void LcdDisplay::print(const char c[]){
-    LiquidCrystal_I2C l = *_lcd;
     l.print(c);
 }
 
 void LcdDisplay::print(int i){
-    LiquidCrystal_I2C l = *_lcd;
     l.print(i);
 }
 
 void LcdDisplay::print(String s){
-    LiquidCrystal_I2C l = *_lcd;
     l.print(s);
 }
 
 void LcdDisplay::clear(){
     DEBUG_PRINTLN(F("LcdDisplay::clear()"));
-    LiquidCrystal_I2C l = *_lcd;
     l.clear();
 }
 
@@ -497,7 +485,6 @@ void LcdDisplay::_abvPrintIpAt(int col, int row, const char prefix[], IPAddress 
   INFO_PRINT(F(" "));
   INFO_PRINTLN(ip);
   
-  LiquidCrystal_I2C l = *_lcd;
   l.setCursor(col, row);
   l.print(prefix); 
   l.print(ip[2]);
@@ -506,7 +493,6 @@ void LcdDisplay::_abvPrintIpAt(int col, int row, const char prefix[], IPAddress 
 }
 
 void LcdDisplay::_printMacAt(int col, int row, const char prefix[], byte mac[]){
-  LiquidCrystal_I2C l = *_lcd;
   l.setCursor(col, row);
   l.print(prefix);
   

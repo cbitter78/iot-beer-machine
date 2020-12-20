@@ -3,7 +3,7 @@
 
 #include <WiFi101.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+
 
 #define LCD_CUSTOM_CHAR_PACK_MAN_OPEN     0
 #define LCD_CUSTOM_CHAR_PACK_MAN_CLOSED   1
@@ -28,7 +28,7 @@ class LcdDisplay {
 
 public:
   LcdDisplay();
-  void init(LiquidCrystal_I2C *lcd);
+  void init();
   void backlight_on();
   void backlight_off();
   void writeAt(uint8_t value, uint8_t col, uint8_t row);
@@ -67,7 +67,7 @@ public:
 
 
 protected:
-  LiquidCrystal_I2C *_lcd;
+
   bool  _adafruit_status;
   float _internal_temp;
   float _external_temp;
