@@ -1,8 +1,6 @@
 #ifndef MACHINE_H
 #define MACHINE_H
 
-#include <Adafruit_BME280.h>
-#include <DallasTemperature.h>
 #include "vend_slot.h"
 
 struct internalSensorData {
@@ -39,8 +37,6 @@ public:
   
 
 protected:
-  DallasTemperature *_internalTempSensor;  
-  Adafruit_BME280 *_externalBMESensor;  
   bool _BMEStatus;
   String _machine_name;
   LcdDisplay *_display;

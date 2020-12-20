@@ -11,6 +11,9 @@
 #include "yhdc.h"
 #include "logging.h"
 
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
 #include <Adafruit_ADS1015.h>
 #include <Adafruit_BME280.h>
 #include <DallasTemperature.h>
@@ -37,8 +40,6 @@ Adafruit_ADS1115  adc2(0x4A);
 
 Machine::Machine(LcdDisplay *lcd_display){
     _display = lcd_display;
-    _internalTempSensor = &internalTempSensor;
-    _externalBMESensor = &bme;
     _BMEStatus = false; 
     _machine_name = String("Beer Machine");
 }
@@ -64,14 +65,13 @@ void Machine::init(){
     slots[4] = &slot5;
     slots[5] = &slot6;
     
-    DallasTemperature dt  = *_internalTempSensor;
-    Adafruit_BME280   bme = *_externalBMESensor;
-    dt.begin(); 
+    internalTempSensor.begin(); 
     if (!bme.begin()) {
         ERROR_PRINTLN(F("Could not find a valid BME280 sensor, check wiring, address, sensor ID!"));
         _BMEStatus = false;
     }else{
         _BMEStatus = true;
+        DEBUG_PRINTLN("Machine::init:  BMP280 started");
     } 
     update_all_slot_status();
 }
@@ -88,8 +88,7 @@ void Machine::update_all_slot_status(){
 
 internalSensorData Machine::read_internal(){
     DEBUG_PRINTLN(F("Machine::read_internal"));
-    DallasTemperature s = *_internalTempSensor;
-    float c = s.getTempCByIndex(0);
+    float c = internalTempSensor.getTempCByIndex(0);
     float f = (c*1.8)+32.0f;
 
     INFO_PRINT(F("Machine::read_internal Temp in Celcius:    "));
@@ -109,15 +108,12 @@ externalSensorData Machine::read_external(){
         delay(1000);
         return {0.0F,0.0F,0.0F,0.0F,0.0F};
     }
-    DEBUG_PRINTLN(F("Before de-referance"));
-    Adafruit_BME280 s = *_externalBMESensor;
     
-    float c    = s.readTemperature();
+    float c    = bme.readTemperature();
     float f    = (c*1.8)+32.0f;
-    DEBUG_PRINTLN(F("after de-referance"));
-    float hPa  = s.readPressure() / 100.0F;
+    float hPa  = bme.readPressure() / 100.0F;
     float inHg = (hPa / 3386.0F) * 100.0F;
-    float h    = s.readHumidity();
+    float h    = bme.readHumidity();
   
     INFO_PRINT(F("Machine::read_external Temp:     "));
     INFO_PRINT(c,2);

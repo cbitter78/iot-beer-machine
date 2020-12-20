@@ -82,7 +82,7 @@ protected:
   /* Methods */
   void _printMacAt(int col, int row, const char prefix[], byte mac[]);
   void _abvPrintIpAt(int col, int row, const char prefix[], IPAddress ip);
-  char const* _wifi_status_string(uint8_t status);
+  String _wifi_status_string(uint8_t status);
 };
 
 #endif /* LCD_DISPLAY_H */ 

@@ -20,13 +20,13 @@ void every_60_minutes();
 HoldOn every30s((30 * 1000),      every_30_seconds);
 HoldOn every1m ((60 * 1000),      every_1_minute);
 HoldOn every15m((15 * 60 * 1000), every_15_minutes);
-HoldOn every60m((60 * 60 * 1000), every_15_minutes);
+HoldOn every60m((60 * 60 * 1000), every_60_minutes);
 
 #define WINC_CS   8
 #define WINC_IRQ  7
 #define WINC_RST  4
 #define WINC_EN   2  
-WiFiClient client;
+
 
 LiquidCrystal_I2C lcd(0x27,20,4); 
 LcdDisplay l_display;
@@ -34,11 +34,13 @@ LcdDisplay l_display;
 Machine machine(&l_display);
 
 /* All things MQTT */
-Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);
-Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
-Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
+WiFiSSLClient client;
+Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 8883, AIO_USERNAME, AIO_KEY);  // We should be using port 8883
 Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/errors");
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
+Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
+
+Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
 
 void setup(void){
   Serial.begin(115200);
@@ -149,7 +151,7 @@ void vend(char *data) {
   const char* beer       = doc["args"][1];
   int         cmd_slot   = doc["slot"];
  
-  if (cmd_slot <= Machine::SLOT_COUNT && cmd_slot > 0){
+  if (cmd_slot < Machine::SLOT_COUNT && cmd_slot >= 0 ){
     VendSlot v = *machine.slots[cmd_slot];
     l_display.start_vend(cmd_slot, beer);
     v.vend();
@@ -157,18 +159,18 @@ void vend(char *data) {
     int slot_status = v.slot_status();
     if (slot_status > SLOT_STATUS_RUNNING_OUT){
       ERROR_PRINT(F("vend:ERROR: slot_status: "));
-      ERROR_PRINT(v.slot_status());
-      vend_status_str = String(slot_status);
-      l_display.scroll_msg(String(F("  !!VENDING ERROR!!     Error Code: ")) + vend_status_str, 80, 4000);
+      ERROR_PRINT(slot_status);
+      vend_status_str = String(F("ERROR,")) + String(slot_status);
+      l_display.scroll_msg(String(F("  !!VENDING ERROR!!       ")) + vend_status_str, 80, 4000);
     }else if(slot_status == SLOT_STATUS_RUNNING_OUT){
-      vend_status_str = "OK,RUNNING_OUT";
+      vend_status_str = String(F("OK,RUNNING_OUT"));
+    }else{
+      l_display.finish_vend(beer, drinker, 4000);
     }
-    
-    l_display.finish_vend(beer, drinker, 4000);
     l_display.display_default_status();
   }
   else{
-    vend_status_str = "NO_SUCH_SLOT";
+    vend_status_str = "ERROR,NO_SUCH_SLOT";
     WARN_PRINTLN("vend: slot: " + String(cmd_slot) + " does not exists");
   }
 

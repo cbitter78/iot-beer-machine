@@ -2,7 +2,11 @@
 
 #ifdef MOCK_MACHINE
 
+#include <Wire.h>
+#include <SPI.h>
+#include <Adafruit_Sensor.h>
 #include <Adafruit_ADS1015.h>
+#include <Adafruit_BME280.h>
 #include "machine.h"
 #include "logging.h"
 
@@ -20,6 +24,9 @@ VendSlot  slot5;
 VendSlot  slot6;
 
 Adafruit_ADS1115  adc(0x48); 
+Adafruit_BME280 bme;
+
+float randomFloat(float minf, float maxf);
 
 Machine::Machine(LcdDisplay *lcd_display){
     _display = lcd_display;
@@ -46,6 +53,14 @@ void Machine::init(){
     slots[3] = &slot4;
     slots[4] = &slot5;
     slots[5] = &slot6;
+        
+    if (!bme.begin()) {
+        ERROR_PRINTLN(F("Could not find a valid BME280 sensor, check wiring, address, sensor ID!"));
+        _BMEStatus = false;
+    }else{
+        _BMEStatus = true;
+        DEBUG_PRINTLN("Machine::init:  BMP280 started");
+    } 
     update_all_slot_status();
 }
 
@@ -62,34 +77,74 @@ void Machine::update_all_slot_status(){
 
 internalSensorData Machine::read_internal(){
     DEBUG_PRINTLN(F("MockMachine::read_internal"));
-    return {
-        0.856F,        /* Celcius         */
-        33.45774F,     /* Fahrenhite      */
-    };
+    float c = randomFloat(0.56, 3.89);
+    float f = (c*1.8)+32.0f;
+    
+    INFO_PRINT(F("Machine::read_internal Temp in Celcius:    "));
+    INFO_PRINTLN(c, 4);
+    INFO_PRINT(F("Machine::read_internal Temp in Fahrenheit: "));
+    INFO_PRINTLN(f, 4);
+    
+    return { c, f };
 }
-externalSensorData Machine::read_external(){
-    DEBUG_PRINTLN(F("MockMachine::read_external"));
-    return {
-        22.54944F,      /* Celcius         */
-        72.589F,        /* Fahrenhite      */
-        81.7372050F,    /* Presure in hPa  */
-        32.81447F,      /* Presure in inHG */
-        95.17544F       /* Humidity        */
-    };
 
-}  
+externalSensorData Machine::read_external(){
+    DEBUG_PRINT(F("Machine::read_external("));
+    DEBUG_PRINT(F("_BMEStatus: "));
+    DEBUG_PRINT(_BMEStatus);
+    DEBUG_PRINTLN(F(")"));
+    if (_BMEStatus == false){
+        WARN_PRINTLN(F("Machine::read_external: No Sensor fake data will be returned"));
+        return {0.0F,0.0F,0.0F,0.0F,0.0F};
+    }
+
+    float c    = bme.readTemperature();
+    DEBUG_PRINTLN(F("-->After readTemperature"));
+    float f    = (c*1.8)+32.0f;
+    float hPa  = bme.readPressure() / 100.0F;
+    DEBUG_PRINTLN(F("-->After readPressure"));
+    float inHg = (hPa / 3386.0F) * 100.0F;
+    float h    = bme.readHumidity();
+    DEBUG_PRINTLN(F("-->After readHumidity"));
+  
+    INFO_PRINT(F("Machine::read_external Temp:     "));
+    INFO_PRINT(c,2);
+    INFO_PRINT(F(" *C  "));
+    INFO_PRINT(f,2);
+    INFO_PRINTLN(F(" *F"));
+  
+    INFO_PRINT(F("Machine::read_external Pressure: "));
+    INFO_PRINT(hPa, 4);
+    INFO_PRINT(F(" hPa "));
+    INFO_PRINT(inHg, 4);
+    INFO_PRINTLN(F(" inHg"));
+  
+    INFO_PRINT(F("Machine::read_external Humidity: "));
+    INFO_PRINT(h, 4);
+    INFO_PRINTLN(F("%"));
+    return { c, f, hPa, inHg, h };
+} 
+
 powerSensorData Machine::read_power_usage(){
-    DEBUG_PRINTLN(F("MockMachine::read_power_usage"));
-    return {
-        4.25218F,       /* Amps            */
-        467.73908F,     /* Watts           */
-    };
+    DEBUG_PRINTLN(F("Machine::read_power_usage"));
+    float a = randomFloat(4.0, 5.0);
+    float w = a * 110;
+    INFO_PRINT(F("Machine::read_power_usage: Amps: "));
+    INFO_PRINT(a, 2);
+    INFO_PRINT(F(" Watts: "));
+    INFO_PRINTLN(w, 1);
+    return {a, w};
 }
-String Machine::name()
-{
+
+String Machine::name(){
     DEBUG_PRINT(F("MockMachine::name:"));
     DEBUG_PRINTLN(_machine_name);
     return _machine_name;  
+}
+
+float randomFloat(float minf, float maxf)
+{
+  return minf + random(1UL << 31) * (maxf - minf) / (1UL << 31);  // use 1ULL<<63 for max double values)
 }
 
 #endif

@@ -526,34 +526,33 @@ void LcdDisplay::_printMacAt(int col, int row, const char prefix[], byte mac[]){
   INFO_PRINTLN();
 }
 
-char const* LcdDisplay::_wifi_status_string(uint8_t wifi_status){
-
+String LcdDisplay::_wifi_status_string(uint8_t wifi_status){
   switch(wifi_status) {
      case 255 :
-        return "NO SHIELD";
+        return F("NO SHIELD");
      case 0 :
-        return "IDLE STATUS";
+        return F("IDLE STATUS");
      case 1 :
-        return "NO SSID AVAIL";
+        return F("NO SSID AVAIL");
      case 2 :
-        return "SCAN COMPLETED";
+        return F("SCAN COMPLETED");
      case 3 :
-        return "CONNECTED";
+        return F("CONNECTED");
      case 4 :
-        return "CONNECT FAILED";
+        return F("CONNECT FAILED");
      case 5 :
-        return "CONNECTION LOST";
+        return F("CONNECTION LOST");
      case 6 :
-        return "AP LISTENING";
+        return F("AP LISTENING");
      case 7 :
-        return "AP CONNECTED";
+        return F("AP CONNECTED");
      case 8 :
-        return "AP FAILED";
+        return F("AP FAILED");
      case 9 :
-        return "PROVISIONING";
+        return F("PROVISIONING");
      case 10 :
-        return "PROVISIONING FAILED";
+        return F("PROVISIONING FAILED");
      default:
-        return "UNKNOWN STATUS";
+        return F("UNKNOWN STATUS");
     }
 }
