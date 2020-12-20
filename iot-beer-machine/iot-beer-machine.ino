@@ -29,6 +29,10 @@ Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USER
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
 Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
+Adafruit_MQTT_Publish   aio_vend_count = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/vend-count");
+Adafruit_MQTT_Publish   aio_int_temp   = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/int-tmp");
+Adafruit_MQTT_Publish   aio_ext_temp   = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/ext-tmp");
+Adafruit_MQTT_Publish   aio_watts      = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/watts");
 
 WiFiUDP Udp;
 EasyNTPClient ntpClient(Udp, "time.nist.gov"); 
@@ -37,7 +41,6 @@ void setup(void){
   Serial.begin(115200);
   pinMode(LED_BUILTIN, OUTPUT);
   
-
   l_display.init();
 
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
@@ -70,15 +73,16 @@ void setup(void){
 
   machine.init();
   update_sensor_data();
+  post_telemetry();
 }
 
 
 void loop(void){
-  Alarm.delay(250);  
+  digitalWrite(LED_BUILTIN, HIGH); 
   MQTTProcessMessages(2000);
-  flash_built_in_led();
+  digitalWrite(LED_BUILTIN, LOW);  
+  Alarm.delay(250);
 }
-
 
 
 void MQTTProcessMessages(int timeout){
@@ -130,7 +134,8 @@ void every_30_seconds(){
 
 void every_1_minute(){
   DEBUG_PRINTLN("every_1_minute:");
-  l_display.display_network_info(5000);
+  l_display.display_network_info(2000);
+  post_telemetry();
 }
 
 
@@ -183,12 +188,54 @@ void vend(char *data) {
   String rx = String(cmd_id) + "::" + vend_status_str;
   char buff[rx.length() + 1];
   rx.toCharArray(buff, rx.length() +1);
-  if (! aio_command_rx.publish(buff)) {
-    ERROR_PRINT(F("vend: ERROR:MQTT: Failed to post to cmd_rx. post_data: "));
+  if (aio_command_rx.publish(buff)) {
+    INFO_PRINT(F("vend:MQTT:Publish:cmd_rx: "));
+    INFO_PRINTLN(buff);
+  }else{
+    ERROR_PRINT(F("vend:ERROR:MQTT:Publish:cmd_rx: Failed to post to cmd_rx. post_data: "));
     ERROR_PRINTLN(buff);
-  } 
+  }
+  
+  if (aio_vend_count.publish((uint32_t)1)) {
+    INFO_PRINTLN(F("vend:MQTT:Publish:vend-count: 1"));
+  }else{
+    ERROR_PRINTLN(F("vend:ERROR:MQTT:Publish:vend-count: 1"));
+  }
 }
 
+
+void post_telemetry(){
+    externalSensorData ed = machine.read_external();
+    internalSensorData id = machine.read_internal();
+    powerSensorData    pd = machine.read_power_usage();
+  
+    double e_temp = ed.FahrenheitTemp;
+    if (aio_ext_temp.publish(e_temp, 4)) {
+      INFO_PRINT(F("post_telemetry:MQTT:Publish:ext-tmp: "));
+      INFO_PRINTLN(e_temp, 4);
+    }else{
+      ERROR_PRINT(F("post_telemetry:ERROR:MQTT:Publish:ext-tmp: "));
+      ERROR_PRINTLN(e_temp, 4);
+    }
+
+    double i_temp = id.FahrenheitTemp;
+    if (aio_int_temp.publish(i_temp, 4)) {
+      INFO_PRINT(F("post_telemetry:MQTT:Publish:int-tmp: "));
+      INFO_PRINTLN(i_temp, 4);
+    }else{
+      ERROR_PRINT(F("post_telemetry:ERROR:MQTT:Publish:int-tmp: "));
+      ERROR_PRINTLN(i_temp, 4);
+    }
+
+    double watts  = pd.Watts;
+    if (aio_watts.publish(watts, 4)) {
+      INFO_PRINT(F("post_telemetry:MQTT:Publish:watts: "));
+      INFO_PRINTLN(watts, 4);
+    }else{
+      ERROR_PRINT(F("post_telemetry:ERROR:MQTT:Publish:watts: "));
+      ERROR_PRINTLN(watts, 4);
+    }
+}
 
 
 void wifi_connect(){

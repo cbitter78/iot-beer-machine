@@ -99,13 +99,10 @@ externalSensorData Machine::read_external(){
     }
 
     float c    = bme.readTemperature();
-    DEBUG_PRINTLN(F("-->After readTemperature"));
     float f    = (c*1.8)+32.0f;
     float hPa  = bme.readPressure() / 100.0F;
-    DEBUG_PRINTLN(F("-->After readPressure"));
     float inHg = (hPa / 3386.0F) * 100.0F;
     float h    = bme.readHumidity();
-    DEBUG_PRINTLN(F("-->After readHumidity"));
   
     INFO_PRINT(F("Machine::read_external Temp:     "));
     INFO_PRINT(c,2);
