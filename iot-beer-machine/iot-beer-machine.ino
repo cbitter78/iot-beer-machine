@@ -1,31 +1,23 @@
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>  
-#include <WiFi101.h>              
+#include <WiFi101.h>  
+#include <WiFiUdp.h> 
+#include <EasyNTPClient.h> 
+#include <TimeLib.h>
+#include <TimeAlarms.h>          
 #include <ArduinoJson.h>         /* https://arduinojson.org/v6/assistant */
 
 #include "secrets.h"
 #include "logging.h"
-#include "hold_on.h"
 #include "lcd_display.h"
 #include "vend_slot.h"
 #include "machine.h"             /* Switch from machine and mock machine in the respeictive .cpp files */
 
-/* Set up HoldOn timers */
-void every_30_seconds();
-void every_1_minute();
-void every_15_minutes();
-void every_60_minutes();
-
-HoldOn every30s((30 * 1000),      every_30_seconds);
-HoldOn every1m ((60 * 1000),      every_1_minute);
-HoldOn every15m((15 * 60 * 1000), every_15_minutes);
-HoldOn every60m((60 * 60 * 1000), every_60_minutes);
-
 #define WINC_CS   8
 #define WINC_IRQ  7
 #define WINC_RST  4
-#define WINC_EN   2  
-
+#define WINC_EN   2 
+#define UDP_NTP_PORT 2390 
 
 LcdDisplay l_display;
 Machine machine(&l_display);
@@ -36,8 +28,10 @@ Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 8883, AIO_USERNAME, AIO
 Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/errors");
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
-
 Adafruit_MQTT_Publish   aio_command_rx = Adafruit_MQTT_Publish  (&mqtt, AIO_USERNAME "/feeds/cmd-rx");
+
+WiFiUDP Udp;
+EasyNTPClient ntpClient(Udp, "time.nist.gov"); 
 
 void setup(void){
   Serial.begin(115200);
@@ -49,6 +43,23 @@ void setup(void){
   WiFi.setPins(WINC_CS, WINC_IRQ, WINC_RST, WINC_EN);
   wifi_connect();
 
+  // Set up NTP
+  delay(2000);             /* Give the UDP port time to set up */
+  time_t t = getTime();
+  while (t == 0){
+    delay(1000);
+    Serial.print(F("Waiting for NTP Sync: "));
+    Serial.println((unsigned int)now());
+    t = getTime();
+  }
+  setTime(t);
+  setSyncInterval(1800);     /* NTP sync every 30 Minutes */
+  setSyncProvider(getTime);
+
+  Alarm.timerRepeat(60, every_1_minute);  
+  Alarm.timerRepeat(30, every_30_seconds);
+  Alarm.timerRepeat(5,  update_sensor_data);
+
   mqtt.subscribe(&aio_command);
   mqtt.subscribe(&aio_errors);
   mqtt.subscribe(&aio_throttle);                                                         
@@ -58,36 +69,41 @@ void setup(void){
   DEBUG_PRINTLN(MAXBUFFERSIZE);
 
   machine.init();
+  update_sensor_data();
 }
 
 
 void loop(void){
-    MQTT_connect();
-    update_sensor_data();
-      
-    Adafruit_MQTT_Subscribe *sub;
-    while ((sub = mqtt.readSubscription(10000))) {
-      if (sub == &aio_command) {
-        vend((char *)aio_command.lastread);
-        
-      } else if(sub == &aio_errors) {
-        String mqtt_error = String((char *)aio_errors.lastread);
-        ERROR_PRINT(F("MQTT ERROR: "));
-        ERROR_PRINTLN(mqtt_error);
-        l_display.scroll_msg(String(F("  ..!MQTT ERROR!..  ")) + mqtt_error, 80, 10000);
+  Alarm.delay(250);  
+  MQTTProcessMessages(2000);
+  flash_built_in_led();
+}
 
-      } else if(sub == &aio_throttle){
-        String mqtt_error = String((char *)aio_errors.lastread);
-        ERROR_PRINT(F("MQTT THROTTLE ERROR: "));
-        ERROR_PRINTLN(mqtt_error);
-        l_display.scroll_msg(String(F("  !MQTT THROTTLE!   ")) + mqtt_error, 80, 10000);
-      }  
-    }   
-    flash_built_in_led();
-    every30s.ReadyYet();
-    every1m.ReadyYet();
-    every15m.ReadyYet();
-    every60m.ReadyYet();
+
+
+void MQTTProcessMessages(int timeout){
+  MQTT_connect();
+  Adafruit_MQTT_Subscribe *sub;
+  while ((sub = mqtt.readSubscription(timeout))) {
+    if (sub == &aio_command) {
+      char * cmd_data = (char *)aio_command.lastread;
+      DEBUG_PRINT(F("MQTTProcessMessages: cmd_data: "));
+      DEBUG_PRINTLN(cmd_data);
+      vend(cmd_data);
+      
+    } else if(sub == &aio_errors) {
+      String mqtt_error = String((char *)aio_errors.lastread);
+      ERROR_PRINT(F("MQTT ERROR: "));
+      ERROR_PRINTLN(mqtt_error);
+      l_display.scroll_msg(String(F("  ..!MQTT ERROR!..  ")) + mqtt_error, 80, 10000);
+  
+    } else if(sub == &aio_throttle){
+      String mqtt_error = String((char *)aio_errors.lastread);
+      ERROR_PRINT(F("MQTT THROTTLE ERROR: "));
+      ERROR_PRINTLN(mqtt_error);
+      l_display.scroll_msg(String(F("  !MQTT THROTTLE!   ")) + mqtt_error, 80, 10000);
+    }  
+  }   
 }
 
 void update_sensor_data(){
@@ -105,6 +121,7 @@ void update_sensor_data(){
   machine.update_all_slot_status();
 }
 
+
 void every_30_seconds(){
   DEBUG_PRINTLN("every_30_seconds:");
   MQTT_connect();
@@ -116,13 +133,6 @@ void every_1_minute(){
   l_display.display_network_info(5000);
 }
 
-void every_15_minutes(){
-  DEBUG_PRINTLN("every_15_minutes:");
-}
-
-void every_60_minutes(){
-  DEBUG_PRINTLN("every_15_minutes:");
-}
 
 void vend(char *data) {
   DEBUG_PRINT(F("vend:data: "));
@@ -200,11 +210,20 @@ void wifi_connect(){
     }
     
     l_display.scroll_msg("Wifi Connected", 100, -1);
+    Udp.begin(UDP_NTP_PORT);  /* Set up UDP port to listen and get the NTP responce */
     delay(1000);
     l_display.display_network_info(3000);
   }
 }
 
+
+time_t getTime(){
+  wifi_connect();
+  Serial.print(F("Syncing Time from NTP: "));
+  time_t t = ntpClient.getUnixTime();
+  Serial.println((unsigned long)t);
+  return t;
+}
 
 
 /*
@@ -246,7 +265,7 @@ void MQTT_connect() {
 
 void flash_built_in_led(){
   digitalWrite(LED_BUILTIN, HIGH); 
-  delay(250);                     
+  delay(200);                     
   digitalWrite(LED_BUILTIN, LOW);  
-  delay(250);                       
+  delay(200);                       
 }
