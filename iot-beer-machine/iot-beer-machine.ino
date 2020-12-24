@@ -73,6 +73,7 @@ void setup(void){
 
   machine.init();
   update_sensor_data();
+  MQTT_connect();
   post_telemetry();
 }
 
@@ -199,7 +200,7 @@ void vend(char *data) {
   if (aio_vend_count.publish((uint32_t)1)) {
     INFO_PRINTLN(F("vend:MQTT:Publish:vend-count: 1"));
   }else{
-    ERROR_PRINTLN(F("vend:ERROR:MQTT:Publish:vend-count: 1"));
+    WARN_PRINTLN(F("vend:WARN:MQTT:Publish:vend-count: 1"));
   }
 }
 
@@ -214,8 +215,8 @@ void post_telemetry(){
       INFO_PRINT(F("post_telemetry:MQTT:Publish:ext-tmp: "));
       INFO_PRINTLN(e_temp, 4);
     }else{
-      ERROR_PRINT(F("post_telemetry:ERROR:MQTT:Publish:ext-tmp: "));
-      ERROR_PRINTLN(e_temp, 4);
+      WARN_PRINT(F("post_telemetry:WARN:MQTT:Publish:ext-tmp: "));
+      WARN_PRINTLN(e_temp, 4);
     }
 
     double i_temp = id.FahrenheitTemp;
@@ -223,8 +224,8 @@ void post_telemetry(){
       INFO_PRINT(F("post_telemetry:MQTT:Publish:int-tmp: "));
       INFO_PRINTLN(i_temp, 4);
     }else{
-      ERROR_PRINT(F("post_telemetry:ERROR:MQTT:Publish:int-tmp: "));
-      ERROR_PRINTLN(i_temp, 4);
+      WARN_PRINT(F("post_telemetry:WARN:MQTT:Publish:int-tmp: "));
+      WARN_PRINTLN(i_temp, 4);
     }
 
     double watts  = pd.Watts;
@@ -232,8 +233,8 @@ void post_telemetry(){
       INFO_PRINT(F("post_telemetry:MQTT:Publish:watts: "));
       INFO_PRINTLN(watts, 4);
     }else{
-      ERROR_PRINT(F("post_telemetry:ERROR:MQTT:Publish:watts: "));
-      ERROR_PRINTLN(watts, 4);
+      WARN_PRINT(F("post_telemetry:WARN:MQTT:Publish:watts: "));
+      WARN_PRINTLN(watts, 4);
     }
 }
 
@@ -266,9 +267,9 @@ void wifi_connect(){
 
 time_t getTime(){
   wifi_connect();
-  Serial.print(F("Syncing Time from NTP: "));
+  INFO_PRINT(F("Syncing Time from NTP: "));
   time_t t = ntpClient.getUnixTime();
-  Serial.println((unsigned long)t);
+  INFO_PRINTLN((unsigned long)t);
   return t;
 }
 
@@ -297,9 +298,9 @@ void MQTT_connect() {
      l_display.printAt(l_display.center("MQTT Status:"), 0, 1);
      l_display.printAt(l_display.center(mqtt.connectErrorString(ret)), 0, 2);
      
-     INFO_PRINT(F("MQTT Error: "));
-     INFO_PRINTLN(mqtt.connectErrorString(ret));
-     INFO_PRINTLN(F("Retrying MQTT connection in 5 seconds..."));
+     WARN_PRINT(F("MQTT Error: "));
+     WARN_PRINTLN(mqtt.connectErrorString(ret));
+     WARN_PRINTLN(F("Retrying MQTT connection in 5 seconds..."));
      for (int i = 0; i < 21; i++){  /* 5 Second Delay  with animation */
         l_display.delay_with_animation(250, 1);
      }
@@ -307,6 +308,7 @@ void MQTT_connect() {
   INFO_PRINTLN(F("MQTT Connected!"));
   l_display.set_adafruit_status(true);
   l_display.display_default_status();
+  delay(2000);  /* Give the adafruit server time to respond */
 }
 
 
