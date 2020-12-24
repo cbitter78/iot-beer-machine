@@ -8,13 +8,22 @@ desired beer. The app will enforce permissions to decide if the beer should be d
 ![Old RC Cola Machine](img/rc_cola.jpg)
 
 
-# Equiptment
+## Equiptment
 
 
-# Reading
+## Objectives
 
-## IOT Hub
+- Will vend a beer from any of the slots in the machine
+- Can detect a stuck beer in a slot
+- Can report the tempiture of the Cans in the slots
+- Can report the tempiture, Barometric pressure and humidity outside of the machine
+- Will send a notification if the machine is opened
+- Can you report on power usage of the AC compressor in the machine
 
-- https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-devguide-device-twins
-- https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-scaling
-- https://docs.microsoft.com/en-us/rest/api/iothub/service/devicemethod/invokedevicemethod
+## Service
+
+### Adafruit.io
+
+I went with Adafruit.io because the projct can run on a free account and the code required to connect
+to the service is super small 22% of the Feather M0.   Other cloud providers used 84% of the Feather M0
+available space.

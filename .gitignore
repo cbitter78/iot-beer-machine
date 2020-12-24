@@ -52,5 +52,5 @@ Mkfile.old
 dkms.conf
 
 # Project Ignore files
-.vscode
 secrets.h
+.DS_Store
