@@ -1,4 +1,4 @@
-#include "vend_slot.h"
+#include <VendSlot.h>
 #include "logging.h"
 
 VendSlot::VendSlot(){

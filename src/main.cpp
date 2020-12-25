@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_Client.h>  
 #include <WiFi101.h>  
@@ -10,7 +11,7 @@
 #include "secrets.h"
 #include "logging.h"
 #include "lcd_display.h"
-#include "vend_slot.h"
+#include <VendSlot.h>
 #include "machine.h"             /* Switch from machine and mock machine in the respeictive .cpp files */
 
 #define WINC_CS   8
@@ -36,6 +37,16 @@ Adafruit_MQTT_Publish   aio_watts      = Adafruit_MQTT_Publish  (&mqtt, AIO_USER
 
 WiFiUDP Udp;
 EasyNTPClient ntpClient(Udp, "time.nist.gov"); 
+
+void wifi_connect();
+void MQTT_connect();
+void MQTTProcessMessages(int timeout);
+void vend(char *data);
+void update_sensor_data();
+void every_30_seconds();
+void every_1_minute();
+void post_telemetry();
+time_t getTime();
 
 void setup(void){
   Serial.begin(115200);
@@ -77,13 +88,13 @@ void setup(void){
   post_telemetry();
 }
 
-
 void loop(void){
   digitalWrite(LED_BUILTIN, HIGH); 
   MQTTProcessMessages(2000);
   digitalWrite(LED_BUILTIN, LOW);  
   Alarm.delay(250);
 }
+
 
 
 void MQTTProcessMessages(int timeout){
@@ -126,7 +137,6 @@ void update_sensor_data(){
   machine.update_all_slot_status();
 }
 
-
 void every_30_seconds(){
   DEBUG_PRINTLN("every_30_seconds:");
   MQTT_connect();
@@ -138,7 +148,6 @@ void every_1_minute(){
   l_display.display_network_info(2000);
   post_telemetry();
 }
-
 
 void vend(char *data) {
   DEBUG_PRINT(F("vend:data: "));
@@ -204,7 +213,6 @@ void vend(char *data) {
   }
 }
 
-
 void post_telemetry(){
     externalSensorData ed = machine.read_external();
     internalSensorData id = machine.read_internal();
@@ -238,7 +246,6 @@ void post_telemetry(){
     }
 }
 
-
 void wifi_connect(){
   while (WiFi.status() != WL_CONNECTED) {
     INFO_PRINT(F("Attempting to connect to SSID: "));
@@ -264,7 +271,6 @@ void wifi_connect(){
   }
 }
 
-
 time_t getTime(){
   wifi_connect();
   INFO_PRINT(F("Syncing Time from NTP: "));
@@ -273,11 +279,6 @@ time_t getTime(){
   return t;
 }
 
-
-/*
- * Function to connect and reconnect as necessary to the MQTT server.
- * Should be called in the loop function and it will take care if connecting.
- */ 
 void MQTT_connect() {
   wifi_connect();
   
@@ -309,12 +310,4 @@ void MQTT_connect() {
   l_display.set_adafruit_status(true);
   l_display.display_default_status();
   delay(2000);  /* Give the adafruit server time to respond */
-}
-
-
-void flash_built_in_led(){
-  digitalWrite(LED_BUILTIN, HIGH); 
-  delay(200);                     
-  digitalWrite(LED_BUILTIN, LOW);  
-  delay(200);                       
 }

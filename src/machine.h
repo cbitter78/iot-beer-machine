@@ -1,7 +1,7 @@
 #ifndef MACHINE_H
 #define MACHINE_H
 
-#include "vend_slot.h"
+#include <VendSlot.h>
 
 struct internalSensorData {
     float CelciusTemp;
