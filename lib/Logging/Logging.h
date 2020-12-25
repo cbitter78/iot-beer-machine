@@ -1,3 +1,6 @@
+#ifndef LOGGING_H
+#define LOGGING_H
+
 //#define PRINT_DEBUG
 //#define PRINT_INFO
 #define PRINT_WARN
@@ -33,4 +36,6 @@
 #else
 #define ERROR_PRINT(...)    {}
 #define ERROR_PRINTLN(...)  {}
+#endif
+
 #endif

@@ -1,5 +1,5 @@
 #include <VendSlot.h>
-#include "logging.h"
+#include <Logging.h>
 
 VendSlot::VendSlot(){
     _slot_number      = 0;

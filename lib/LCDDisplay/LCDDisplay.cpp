@@ -1,5 +1,5 @@
 #include <LCDDisplay.h>
-#include "logging.h"
+#include <Logging.h>
 
 #include <WiFi101.h>
 #include <Wire.h>
