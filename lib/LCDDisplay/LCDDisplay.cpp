@@ -1,4 +1,4 @@
-#include "lcd_display.h"
+#include <LCDDisplay.h>
 #include "logging.h"
 
 #include <WiFi101.h>

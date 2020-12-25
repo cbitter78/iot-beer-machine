@@ -2,7 +2,7 @@
 #define VEND_SLOT_H
 
 #include <Adafruit_ADS1015.h>
-#include "lcd_display.h"
+#include <LCDDisplay.h>
 
 
 #define SLOT_STATUS_NOT_SET_UP  -1

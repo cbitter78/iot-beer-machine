@@ -10,7 +10,7 @@
 
 #include "secrets.h"
 #include "logging.h"
-#include "lcd_display.h"
+#include <LCDDisplay.h>
 #include <VendSlot.h>
 #include "machine.h"             /* Switch from machine and mock machine in the respeictive .cpp files */
 
