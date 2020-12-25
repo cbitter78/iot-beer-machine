@@ -1,5 +1,3 @@
-#define MOCK_MACHINE
-
 #ifdef MOCK_MACHINE
 
 #include <Wire.h>
@@ -7,8 +5,8 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADS1015.h>
 #include <Adafruit_BME280.h>
-#include "machine.h"
-#include "logging.h"
+#include <Machine.h>
+#include <Logging.h>
 
 /*
  * This class sets up the VendSlots and performs machine 

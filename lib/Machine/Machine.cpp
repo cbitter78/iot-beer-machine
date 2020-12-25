@@ -1,15 +1,8 @@
-/*
- * This class sets up the VendSlots and performs machine 
- * Specific operations.  We don't fully abstract logic here because
- * the aim was just a abstract enough to allow for a test rig.
- */
+#ifndef MOCK_MACHINE
 
-//#define MACHINE
-#ifdef MACHINE
-
-#include "machine.h"
+#include <Machine.h>
 #include "yhdc.h"
-#include "logging.h"
+#include <Logging.h>
 
 #include <Wire.h>
 #include <SPI.h>

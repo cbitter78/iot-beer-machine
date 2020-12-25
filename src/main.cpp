@@ -9,10 +9,10 @@
 #include <ArduinoJson.h>         /* https://arduinojson.org/v6/assistant */
 
 #include "secrets.h"
-#include "logging.h"
+#include <Logging.h>
 #include <LCDDisplay.h>
 #include <VendSlot.h>
-#include "machine.h"             /* Switch from machine and mock machine in the respeictive .cpp files */
+#include <Machine.h>             /* Switch from machine and mock machine in platformio.ini */
 
 #define WINC_CS   8
 #define WINC_IRQ  7
