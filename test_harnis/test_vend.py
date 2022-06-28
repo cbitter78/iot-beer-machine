@@ -4,11 +4,9 @@ import random
 import string
 import json
 import re
+import os
 import sys
 from Adafruit_IO import Client, Feed, AdafruitIOError, errors
-
-ADAFRUIT_IO_USERNAME = ""
-ADAFRUIT_IO_KEY      = ""
 
 BEERS = [
     'Dog Fish 60 Minute',
@@ -27,7 +25,10 @@ with open('../iot-beer-machine/secrets.h', 'r') as reader:
 
 
 def get_id():
-    return ''.join(random.choice(string.ascii_letters) for i in range(4))
+    if len(sys.argv) > 1:
+        return sys.argv[1]
+    else:
+        return ''.join(random.choice(string.ascii_letters) for i in range(4))
 
 
 
@@ -64,4 +65,5 @@ def vend():
 
 
 if __name__ == "__main__":
+    print(sys.argv)
     vend()
