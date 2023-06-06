@@ -53,4 +53,7 @@ dkms.conf
 
 # Project Ignore files
 secrets.h
+test_harnis/venv/
 .DS_Store
+*.icloud
+.pio

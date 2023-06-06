@@ -24,8 +24,14 @@ LcdDisplay l_display;
 Machine machine(&l_display);
 
 /* All things MQTT */
+#ifndef MQTT_SSL
+WiFiClient client;
+Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 1883, AIO_USERNAME, AIO_KEY);  
+#else
 WiFiSSLClient client;
-Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 8883, AIO_USERNAME, AIO_KEY);  // We should be using port 8883
+Adafruit_MQTT_Client    mqtt(&client, "io.adafruit.com", 8883, AIO_USERNAME, AIO_KEY); 
+#endif
+
 Adafruit_MQTT_Subscribe aio_errors     = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/errors");
 Adafruit_MQTT_Subscribe aio_throttle   = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/throttle");
 Adafruit_MQTT_Subscribe aio_command    = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/cmd"); 
@@ -41,7 +47,9 @@ EasyNTPClient ntpClient(Udp, "time.nist.gov");
 void wifi_connect();
 void MQTT_connect();
 void MQTTProcessMessages(int timeout);
-void vend(char *data);
+void iot_command(char *data);
+String vend(DynamicJsonDocument doc);
+String reset_display(DynamicJsonDocument doc);
 void update_sensor_data();
 void every_30_seconds();
 void every_1_minute();
@@ -58,10 +66,12 @@ void setup(void){
   wifi_connect();
 
   // Set up NTP
-  delay(2000);             /* Give the UDP port time to set up */
+  l_display.clear();
+  l_display.printAt(l_display.center("Syncing NTP Time"), 0, 0);
+  for (int i = 0; i < 8; i++){ l_display.delay_with_animation(250, 1); }  /* Give the UDP port time to set up */
   time_t t = getTime();
   while (t == 0){
-    delay(1000);
+    for (int i = 0; i < 4; i++){ l_display.delay_with_animation(250, 1); }
     Serial.print(F("Waiting for NTP Sync: "));
     Serial.println((unsigned int)now());
     t = getTime();
@@ -69,6 +79,7 @@ void setup(void){
   setTime(t);
   setSyncInterval(1800);     /* NTP sync every 30 Minutes */
   setSyncProvider(getTime);
+  l_display.clear();
 
   Alarm.timerRepeat(60, every_1_minute);  
   Alarm.timerRepeat(30, every_30_seconds);
@@ -105,7 +116,7 @@ void MQTTProcessMessages(int timeout){
       char * cmd_data = (char *)aio_command.lastread;
       DEBUG_PRINT(F("MQTTProcessMessages: cmd_data: "));
       DEBUG_PRINTLN(cmd_data);
-      vend(cmd_data);
+      iot_command(cmd_data);
       
     } else if(sub == &aio_errors) {
       String mqtt_error = String((char *)aio_errors.lastread);
@@ -149,68 +160,87 @@ void every_1_minute(){
   post_telemetry();
 }
 
-void vend(char *data) {
-  DEBUG_PRINT(F("vend:data: "));
+void iot_command(char *data){
+  DEBUG_PRINT(F("iot_command: "));
   DEBUG_PRINTLN(data);
- 
+  
   // Parse the JSON document 
   // Example:
-  //          {"name":"vend","id":"1","slot":2,"args":["Charles", "Beer"]}
+  //          {"name":"vend","id":"1","args":[2, "Charles", "Beer"]}
   //
   DynamicJsonDocument doc(200);
   DeserializationError err = deserializeJson(doc, data);
   if (err) {
-    WARN_PRINT(F("Parsing command failed: "));
+    WARN_PRINT(F("iot_command:WARN:Parsing JSON command failed: "));
     WARN_PRINTLN(err.c_str());
     return;
   }
 
-  String vend_status_str = "OK";
   const char* cmd_name   = doc["cmd"]; 
   const char* cmd_id     = doc["id"]; 
-  const char* drinker    = doc["args"][0]; 
-  const char* beer       = doc["args"][1];
-  int         cmd_slot   = doc["slot"];
- 
-  if (cmd_slot < Machine::SLOT_COUNT && cmd_slot >= 0 ){
-    VendSlot v = *machine.slots[cmd_slot];
-    l_display.start_vend(cmd_slot, beer);
-    v.vend();
-    
-    int slot_status = v.slot_status();
-    if (slot_status > SLOT_STATUS_RUNNING_OUT){
-      ERROR_PRINT(F("vend:ERROR: slot_status: "));
-      ERROR_PRINT(slot_status);
-      vend_status_str = String(F("ERROR,")) + String(slot_status);
-      l_display.scroll_msg(String(F("  !!VENDING ERROR!!       ")) + vend_status_str, 80, 4000);
-    }else if(slot_status == SLOT_STATUS_RUNNING_OUT){
-      vend_status_str = String(F("OK,RUNNING_OUT"));
-    }else{
-      l_display.finish_vend(beer, drinker, 4000);
-    }
-    l_display.display_default_status();
-  }
-  else{
-    vend_status_str = "ERROR,NO_SUCH_SLOT";
-    WARN_PRINTLN("vend: slot: " + String(cmd_slot) + " does not exists");
+  String status_str = "ERROR,NO_SUCH_COMMAND";
+
+  if (String(cmd_name) == String("vend")){
+    status_str = vend(doc);
   }
 
-  String rx = String(cmd_id) + "::" + vend_status_str;
+  if (String(cmd_name) == String("reset_display")){
+    status_str = reset_display(doc);
+  }
+
+  String rx = String(cmd_id) + "::" + status_str;
   char buff[rx.length() + 1];
   rx.toCharArray(buff, rx.length() +1);
   if (aio_command_rx.publish(buff)) {
-    INFO_PRINT(F("vend:MQTT:Publish:cmd_rx: "));
+    INFO_PRINT(F("iot_command:MQTT:Publish:cmd_rx: "));
     INFO_PRINTLN(buff);
   }else{
-    ERROR_PRINT(F("vend:ERROR:MQTT:Publish:cmd_rx: Failed to post to cmd_rx. post_data: "));
+    ERROR_PRINT(F("iot_command:ERROR:MQTT:Publish:cmd_rx: Failed to post to cmd_rx. post_data: "));
     ERROR_PRINTLN(buff);
   }
+}
+
+String reset_display(DynamicJsonDocument doc){
+  l_display.reset();
+  return "OK";
+}
+
+String vend(DynamicJsonDocument doc){
+
+  String vend_status_str = "OK";
+  int cmd_slot           = doc["args"][0];
+  const char* drinker    = doc["args"][1]; 
+  const char* beer       = doc["args"][2];
+
+  if (cmd_slot >= Machine::SLOT_COUNT && cmd_slot < 0 ){
+    WARN_PRINTLN("vend: slot: " + String(cmd_slot) + " does not exists");
+    return "ERROR,NO_SUCH_SLOT";
+  }
+
+  VendSlot v = *machine.slots[cmd_slot];
+  l_display.start_vend(cmd_slot, beer);
+  v.vend();
+  
+  int slot_status = v.slot_status();
+  if (slot_status > SLOT_STATUS_RUNNING_OUT){
+    ERROR_PRINT(F("vend:ERROR: slot_status: "));
+    ERROR_PRINT(slot_status);
+    vend_status_str = String(F("ERROR,")) + String(slot_status);
+    l_display.scroll_msg(String(F("  !!VENDING ERROR!!       ")) + vend_status_str, 80, 4000);
+  }else if(slot_status == SLOT_STATUS_RUNNING_OUT){
+    vend_status_str = String(F("OK,RUNNING_OUT"));
+  }else{
+    vend_status_str = "OK";
+    l_display.finish_vend(beer, drinker, 4000);
+  }
+  l_display.display_default_status();
   
   if (aio_vend_count.publish((uint32_t)1)) {
     INFO_PRINTLN(F("vend:MQTT:Publish:vend-count: 1"));
   }else{
     WARN_PRINTLN(F("vend:WARN:MQTT:Publish:vend-count: 1"));
   }
+  return vend_status_str;
 }
 
 void post_telemetry(){

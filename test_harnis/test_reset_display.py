@@ -10,14 +10,7 @@ from Adafruit_IO import Client, Feed, AdafruitIOError, errors
 ADAFRUIT_IO_USERNAME = ""
 ADAFRUIT_IO_KEY      = ""
 
-BEERS = [
-    'Dog Fish 60 Minute',
-    'Bells two hearted',
-    'Freshly Squeezed',
-    'All Day IPA',
-    'Guiness',
-    'Ballast Point Sculpin IPA'
-]
+
 
 # Get the adafruit creds from the arduino code. 
 with open('../src/secrets.h', 'r') as reader:
@@ -37,17 +30,12 @@ def get_feed(feed_name, aio):
     except errors.RequestError: # else create it
         return aio.create_feed(Feed(feed_name))
 
-def vend():
+def reset_display():
     aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
     aio_cmd    = get_feed('cmd', aio)
-    aio_cmd_rx = get_feed('cmd-rx', aio)
 
-
-
-    d = json.loads('{"cmd":"vend","id":"1","args":[1, "Charles", "Ballast Point Grapefruit Sculpin"]}')
+    d = json.loads('{"cmd":"reset_display","id":"1","args":[]}')
     d['id'] = get_id()
-    d['args'][0] = 1 #random.randint(0,5)  # Assign the slot
-    d['args'][2] = BEERS[d['args'][0]]
     payload = json.dumps(d)
     
     
@@ -56,12 +44,11 @@ def vend():
         return
 
     print(f"Sending payload {payload} Len: {len(payload)}")
-
-    r = aio.send(aio_cmd.name, payload)
+    aio.send(aio_cmd.name, payload)
     print("data sent")
 
     
 
 
 if __name__ == "__main__":
-    vend()
+    reset_display()

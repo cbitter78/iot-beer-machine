@@ -1,0 +1,36 @@
+// AUTOMATICALLY GENERATED FILE. PLEASE DO NOT MODIFY IT MANUALLY
+
+// PIO Unified Debugger
+//
+// Documentation: https://docs.platformio.org/page/plus/debugging.html
+// Configuration: https://docs.platformio.org/page/projectconf/section_env_debug.html
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "platformio-debug",
+            "request": "launch",
+            "name": "PIO Debug",
+            "executable": "/Users/cbitter/Documents/PlatformIO/Projects/iot-beer-machine/.pio/build/adafruit_feather_m0/firmware.elf",
+            "projectEnvName": "adafruit_feather_m0",
+            "toolchainBinDir": "/Users/cbitter/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "svdPath": "/Users/cbitter/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
+            "preLaunchTask": {
+                "type": "PlatformIO",
+                "task": "Pre-Debug"
+            },
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "platformio-debug",
+            "request": "launch",
+            "name": "PIO Debug (skip Pre-Debug)",
+            "executable": "/Users/cbitter/Documents/PlatformIO/Projects/iot-beer-machine/.pio/build/adafruit_feather_m0/firmware.elf",
+            "projectEnvName": "adafruit_feather_m0",
+            "toolchainBinDir": "/Users/cbitter/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "svdPath": "/Users/cbitter/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
+            "internalConsoleOptions": "openOnSessionStart"
+        }
+    ]
+}

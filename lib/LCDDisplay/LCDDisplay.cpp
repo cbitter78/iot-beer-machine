@@ -11,7 +11,7 @@
 */
 
 
-LiquidCrystal_I2C l(0x27,20,4);
+LiquidCrystal_I2C l(0x25,20,4);
 
 LcdDisplay::LcdDisplay(){
     _adafruit_status     = false;
@@ -23,7 +23,7 @@ LcdDisplay::LcdDisplay(){
     _external_humidity   = 0.0F;;
     _amps                = 0.0F;;
     _watts               = 0.0F;;
-    for (int i = 0; i < 7; i++){
+    for (int i = 0; i < 6; i++){
         _slot_status[i] = -1;
     }
 }
@@ -455,6 +455,20 @@ void LcdDisplay::print(int i){
 
 void LcdDisplay::print(String s){
     l.print(s);
+}
+
+void LcdDisplay::reset(){
+   DEBUG_PRINTLN(F("LcdDisplay::reset()"));
+   l.clear();
+   for (int i = 0; i < 4; i++){
+     for (int s = 0; s < 20; s++){
+       l.setCursor(s, i);
+       l.print(" ");
+     }
+   }
+   l.backlight();
+   l.blink_off();
+   l.noCursor();
 }
 
 void LcdDisplay::clear(){

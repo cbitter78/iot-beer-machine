@@ -1,11 +1,6 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-//#define PRINT_DEBUG
-//#define PRINT_INFO
-#define PRINT_WARN
-#define PRINT_ERROR
-
 #ifdef PRINT_DEBUG
 #define DEBUG_PRINT(...)    { Serial.print(__VA_ARGS__);   }
 #define DEBUG_PRINTLN(...)  { Serial.println(__VA_ARGS__); }

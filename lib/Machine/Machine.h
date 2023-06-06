@@ -15,7 +15,7 @@ struct externalSensorData {
     float Pressure_inHG;
     float Humidity;
 };
-
+// Yellow, Red, Black
 struct powerSensorData {
     float Amps;
     float Watts;

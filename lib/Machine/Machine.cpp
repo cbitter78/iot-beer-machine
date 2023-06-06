@@ -1,7 +1,7 @@
 #ifndef MOCK_MACHINE
 
 #include <Machine.h>
-#include "yhdc.h"
+#include <yhdc.h>
 #include <Logging.h>
 
 #include <Wire.h>
@@ -13,9 +13,10 @@
 #include <OneWire.h>
 
 /* Sensors */
-#define AMP_MEETER_ANALOG_PIN A0
+#define AMP_MEETER_ANALOG_PIN    A0
+#define INTERNAL_TEMP_SENSOR_PIN A1
 
-OneWire oneWire(15);
+OneWire oneWire(INTERNAL_TEMP_SENSOR_PIN);
 DallasTemperature internalTempSensor(&oneWire);
 Adafruit_BME280 bme;
 
@@ -71,16 +72,12 @@ void Machine::init(){
 
 void Machine::update_all_slot_status(){
     LcdDisplay lcd = *_display;
-    lcd.set_slot_status(0, slot1.slot_status());
-    lcd.set_slot_status(1, slot2.slot_status());
-    lcd.set_slot_status(2, slot3.slot_status());
-    lcd.set_slot_status(3, slot4.slot_status());
-    lcd.set_slot_status(4, slot5.slot_status());
-    lcd.set_slot_status(5, slot6.slot_status());
+
 }
 
 internalSensorData Machine::read_internal(){
     DEBUG_PRINTLN(F("Machine::read_internal"));
+    internalTempSensor.requestTemperaturesByIndex(0);
     float c = internalTempSensor.getTempCByIndex(0);
     float f = (c*1.8)+32.0f;
 
@@ -88,7 +85,7 @@ internalSensorData Machine::read_internal(){
     INFO_PRINTLN(c, 4);
     INFO_PRINT(F("Machine::read_internal Temp in Fahrenheit: "));
     INFO_PRINTLN(f, 4);
-    return {f, c};
+    return {c, f};
 }
 
 externalSensorData Machine::read_external(){
